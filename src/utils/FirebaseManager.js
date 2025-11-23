@@ -29,20 +29,21 @@ export class FirebaseManager {
      */
     async getTopScores() {
         try {
-            const q = query(
-                collection(this.db, this.collectionName),
-                orderBy("score", "desc"),
-                limit(RANKING)
-            );
+            const scoresRef = collection(this.db, "scores");
+            // 점수 내림차순 정렬, 상위 10개만 가져오기
+            const q = query(scoresRef, orderBy("score", "desc"), limit(10));
 
             const querySnapshot = await getDocs(q);
             const scores = [];
+
             querySnapshot.forEach((doc) => {
-                scores.push({ id: doc.id, ...doc.data() });
+                scores.push(doc.data());
             });
+
             return scores;
-        } catch (error) {
-            console.error("Error getting scores:", error);
+        } catch (e) {
+            console.error("Error getting documents: ", e);
+            alert("랭킹을 불러오는 중 오류가 발생했습니다: " + e.message);
             return [];
         }
     }
@@ -52,36 +53,40 @@ export class FirebaseManager {
      */
     async saveScore(playerName, score) {
         try {
-            const docRef = await addDoc(collection(this.db, this.collectionName), {
+            const scoresRef = collection(this.db, "scores");
+            await addDoc(scoresRef, {
                 playerName: playerName,
                 score: score,
-                timestamp: serverTimestamp(),
-                date: new Date().toLocaleDateString()
+                timestamp: serverTimestamp(), // 서버 시간
+                date: new Date().toLocaleDateString() // 표시용 날짜
             });
-            console.log("Score saved with ID: ", docRef.id);
             return true;
-        } catch (error) {
-            console.error("Error adding score:", error);
+        } catch (e) {
+            console.error("Error adding document: ", e);
+            alert("점수 저장 중 오류가 발생했습니다: " + e.message);
             return false;
         }
     }
 
     /**
      * 현재 점수가 상위 10위 안에 드는지 확인
-     * (단순화를 위해 10번째 점수보다 크면 true)
      */
     async isTopTen(currentScore) {
         try {
-            const scores = await this.getTopScores();
+            const topScores = await this.getTopScores();
 
-            // 아직 10명이 안 찼으면 무조건 등극
-            if (scores.length < RANKING) return true;
+            // 아직 10명이 안 찼으면 무조건 10위 진입
+            if (topScores.length < 10) {
+                return true;
+            }
 
-            // 10번째 사람 점수보다 높으면 등극
-            const lastScore = scores[scores.length - 1].score;
-            return currentScore > lastScore;
-        } catch (error) {
-            console.error("Error checking top ten:", error);
+            // 10위 점수보다 내 점수가 높으면 진입
+            const tenthScore = topScores[topScores.length - 1].score;
+            return currentScore > tenthScore;
+        } catch (e) {
+            console.error("Error checking top ten: ", e);
+            // 에러 발생 시 사용자 경험을 해치지 않기 위해 조용히 false 반환
+            // (랭킹 로드 실패 alert는 getTopScores에서 이미 뜸)
             return false;
         }
     }

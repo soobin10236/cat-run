@@ -4,9 +4,16 @@
  */
 import { GameManager } from './GameManager.js';
 import { ASSETS } from './constants/Assets.js';
+import { GAME_VERSION } from './constants/Version.js';
 
 // DOM 컨텐츠가 모두 로드된 후 실행
 window.addEventListener('DOMContentLoaded', async () => {
+    // 버전 정보 표시
+    const versionElement = document.getElementById('game-version');
+    if (versionElement) {
+        versionElement.innerText = GAME_VERSION;
+    }
+
     // 캔버스 엘리먼트 가져오기
     const canvas = document.getElementById('game-canvas');
 
