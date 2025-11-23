@@ -6,6 +6,8 @@ import { Background } from './entities/Background.js';
 import { AudioManager } from './utils/AudioManager.js';
 import { FirebaseManager } from './utils/FirebaseManager.js';
 
+import { GAME_VERSION } from './constants/Version.js';
+
 /**
  * 게임 매니저 클래스 (GameManager)
  * 게임의 전반적인 상태, 루프, 엔티티 관리, 충돌 처리 등을 담당합니다.
@@ -20,6 +22,12 @@ export class GameManager {
         this.score = 0; // 현재 점수
         this.isGameOver = false; // 게임 오버 상태
 
+        // 버전 표시
+        const versionElement = document.getElementById('game-version');
+        if (versionElement) {
+            versionElement.innerText = `v${GAME_VERSION}`;
+        }
+
         // 게임 속도 설정
         this.MAX_GAME_SPEED = 4.5; // 최대 게임 속도 제한 (눈의 피로 방지)
         this.gameSpeed = 3; // 초기 게임 속도
@@ -32,6 +40,19 @@ export class GameManager {
         this.background = new Background(this); // 배경
         this.player = new Player(this); // 플레이어
         this.firebaseManager = new FirebaseManager(); // Firebase 매니저
+
+        // 실시간 버전 체크
+        this.firebaseManager.listenForVersionChange((serverVersion) => {
+            console.log(`Server version: ${serverVersion}`);
+            console.log(`Client version: ${GAME_VERSION}`);
+            if (serverVersion !== GAME_VERSION) {
+                // 버전이 다르면 알림 표시 후 새로고침
+                // 게임 중 방해되지 않도록 게임 오버 상태이거나 시작 전일 때만 체크하거나
+                // 긴급 패치라면 즉시 중단시킬 수도 있음. 여기서는 alert로 처리
+                alert(`새로운 버전(v${serverVersion})이 출시되었습니다! \n확인을 누르면 업데이트를 위해 새로고침합니다.`);
+                location.reload();
+            }
+        });
 
         this.obstacles = []; // 장애물 배열
         this.items = []; // 아이템 배열
@@ -89,21 +110,21 @@ export class GameManager {
             this.obstacles.push(new Obstacle(this));
             this.obstacleTimer = 0;
 
-            // 다음 장애물 생성 간격 계산 (더 촘촘하게)
-            // 1. 속도에 따른 감소 (계수 350으로 증가)
-            const speedReduction = this.gameSpeed * 350;
+            // 다음 장애물 생성 간격 계산 (난이도 재조정: 원래 버전보다 30% 정도 완화)
+            // 1. 속도에 따른 감소 (계수 250으로 설정 - 원래 350보다 완화, 이전 100보다 강화)
+            const speedReduction = this.gameSpeed * 250;
 
             // 2. 점수에 따른 추가 감소
             const scoreReduction = this.score * 0.1;
 
-            // 기본값을 2200으로 낮춰서 전체적으로 더 자주 나오게 함
-            const baseInterval = 2200 - speedReduction - scoreReduction;
+            // 기본값을 2300으로 설정 (원래 2200보다 약간 여유, 이전 2500보다 빡빡하게)
+            const baseInterval = 2300 - speedReduction - scoreReduction;
 
-            // 최소 간격 300ms 수정
-            const safeInterval = Math.max(baseInterval, 300);
+            // 최소 간격 500ms (0.5초) 보장 - 원래 300ms보다 여유, 이전 800ms보다 빡빡하게
+            const safeInterval = Math.max(baseInterval, 500);
 
-            // 랜덤성도 줄여서(300ms) 더 규칙적으로 빡빡하게
-            this.obstacleInterval = safeInterval + Math.random() * 300;
+            // 랜덤성 500ms 추가
+            this.obstacleInterval = safeInterval + Math.random() * 500;
         } else {
             this.obstacleTimer += deltaTime;
         }
@@ -118,10 +139,32 @@ export class GameManager {
         this.obstacles = this.obstacles.filter(obstacle => !obstacle.markedForDeletion);
 
         // 아이템 처리
-        if (this.itemTimer > this.itemInterval) {
-            // 30% 확률로 아이템 생성
-            if (Math.random() < 0.3) {
-                this.items.push(new Item(this));
+        if (this.itemTimer > 200) { // 체크 간격 대폭 단축 (0.2초마다 확인)
+            // 20% 확률로 아이템 생성 시도 (자주 체크하므로 확률은 낮춤)
+            if (Math.random() < 0.2) {
+                // [충돌 방지] 조건 대폭 완화
+                const lastObstacle = this.obstacles.length > 0 ? this.obstacles[this.obstacles.length - 1] : null;
+
+                // 안전 거리: 장애물 너비(약 100)만큼만 떨어지면 생성 (버퍼 제거)
+                const safeDistance = 150;
+
+                let canSpawn = true;
+
+                // 1. 마지막 장애물과의 거리 확인
+                // 장애물이 화면에 막 등장했을 때만 피하면 됨
+                if (lastObstacle && lastObstacle.x > this.width - safeDistance) {
+                    canSpawn = false;
+                }
+
+                // 2. 다음 장애물 생성까지 남은 시간 확인
+                // 0.3초(300ms)만 있으면 생성 허용 (기존 800ms -> 300ms)
+                if (this.obstacleInterval - this.obstacleTimer < 300) {
+                    canSpawn = false;
+                }
+
+                if (canSpawn) {
+                    this.items.push(new Item(this));
+                }
             }
             this.itemTimer = 0;
         } else {
@@ -292,7 +335,16 @@ export class GameManager {
      * 메인 게임 루프
      */
     gameLoop(timestamp) {
-        const deltaTime = timestamp - this.lastTime;
+        // timestamp가 없거나 비정상적인 경우 처리
+        if (!timestamp) timestamp = performance.now();
+
+        let deltaTime = timestamp - this.lastTime;
+
+        // deltaTime이 NaN이거나 음수인 경우 보정
+        if (isNaN(deltaTime) || deltaTime < 0) {
+            deltaTime = 16.67; // 기본 60FPS 기준 값
+        }
+
         this.lastTime = timestamp;
 
         this.update(deltaTime);
@@ -323,6 +375,10 @@ export class GameManager {
                 this.nameInputModal.classList.remove('hidden');
                 this.playerNameInput.focus();
             }, 500);
+        } else {
+            // 상위 10위가 아니더라도 기록 저장 (이름 없이 'Anonymous'로 저장)
+            // 사용자에게는 별도 입력 없이 조용히 저장됨
+            this.firebaseManager.saveScore('Anonymous', finalScore);
         }
     }
 

@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
 
 const firebaseConfig = {
@@ -88,6 +88,26 @@ export class FirebaseManager {
             // 에러 발생 시 사용자 경험을 해치지 않기 위해 조용히 false 반환
             // (랭킹 로드 실패 alert는 getTopScores에서 이미 뜸)
             return false;
+        }
+    }
+
+    /**
+     * 버전 변경 감지 리스너
+     * @param {function} onVersionChange - 버전 변경 시 실행할 콜백 함수
+     */
+    listenForVersionChange(onVersionChange) {
+        try {
+            const docRef = doc(this.db, "config", "version");
+            onSnapshot(docRef, (doc) => {
+                if (doc.exists()) {
+                    const data = doc.data();
+                    if (data.version) {
+                        onVersionChange(data.version);
+                    }
+                }
+            });
+        } catch (e) {
+            console.error("Error listening for version:", e);
         }
     }
 }

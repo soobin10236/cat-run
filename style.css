@@ -10,6 +10,9 @@ body {
     font-family: 'Arial', sans-serif;
     color: white;
     overflow: hidden;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 #game-container {
@@ -21,6 +24,7 @@ canvas {
     background-color: #87CEEB;
     display: block;
     border-radius: 8px;
+    touch-action: none;
 }
 
 /* UI Overlay */
@@ -89,6 +93,7 @@ button {
     transition: all 0.2s;
     font-weight: bold;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    touch-action: manipulation;
 }
 
 button:hover {
@@ -187,9 +192,9 @@ button:active {
 
 .mobile-btn {
     position: absolute;
-    bottom: 30px;
-    width: 100px;
-    height: 100px;
+    bottom: 5vmin;
+    width: clamp(70px, 20vmin, 110px);
+    height: clamp(70px, 20vmin, 110px);
     background: transparent;
     border: 3px solid rgba(255, 255, 255, 0.2);
     border-radius: 50%;
@@ -206,11 +211,11 @@ button:active {
 }
 
 #jump-btn {
-    left: 30px;
+    left: 5vmin;
 }
 
 #slide-btn {
-    right: 30px;
+    right: 5vmin;
 }
 
 .mobile-btn:active {
@@ -219,7 +224,7 @@ button:active {
 }
 
 .mobile-btn .btn-icon {
-    font-size: 40px;
+    font-size: clamp(30px, 8vmin, 50px);
     line-height: 1;
     color: rgba(255, 255, 255, 0.2);
 }
@@ -400,7 +405,6 @@ button:active {
 .modal-content h1 {
     font-size: 32px;
     color: #f39c12;
-    /* 골드 컬러 */
     margin-bottom: 10px;
     text-shadow: none;
 }

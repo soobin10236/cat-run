@@ -39,7 +39,7 @@ export class InputHandler {
                 if (this.keys.indexOf('ArrowUp') === -1) {
                     this.keys.push('ArrowUp');
                 }
-            });
+            }, { passive: false });
 
             // 터치 종료
             jumpBtn.addEventListener('touchend', (e) => {
@@ -48,7 +48,7 @@ export class InputHandler {
                 if (index !== -1) {
                     this.keys.splice(index, 1);
                 }
-            });
+            }, { passive: false });
 
             // 마우스 클릭 (PC에서도 작동)
             jumpBtn.addEventListener('mousedown', (e) => {
@@ -76,7 +76,7 @@ export class InputHandler {
                 if (this.keys.indexOf('ArrowDown') === -1) {
                     this.keys.push('ArrowDown');
                 }
-            });
+            }, { passive: false });
 
             // 터치 종료
             slideBtn.addEventListener('touchend', (e) => {
@@ -85,7 +85,7 @@ export class InputHandler {
                 if (index !== -1) {
                     this.keys.splice(index, 1);
                 }
-            });
+            }, { passive: false });
 
             // 마우스 클릭 (PC에서도 작동)
             slideBtn.addEventListener('mousedown', (e) => {

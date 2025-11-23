@@ -1,6 +1,12 @@
 /**
  * 배경 관리 클래스 (Background)
  * 구름 등을 생성하고 움직여서 패럴랙스 효과나 배경 흐름을 만듭니다.
+/**
+ * 배경 관리 클래스 (Background)
+ * 구름 등을 생성하고 움직여서 패럴랙스 효과나 배경 흐름을 만듭니다.
+/**
+ * 배경 관리 클래스 (Background)
+ * 구름 등을 생성하고 움직여서 패럴랙스 효과나 배경 흐름을 만듭니다.
  */
 import { ASSETS } from '../constants/Assets.js';
 
@@ -16,9 +22,15 @@ export class Background {
     }
 
     update(deltaTime) {
-        // 게임 속도에 맞춰 배경 이동 (바닥이 포함되어 있으므로 동일 속도)
-        this.x1 -= this.game.gameSpeed;
-        this.x2 -= this.game.gameSpeed;
+        // 프레임 레이트 독립적인 속도 보정 (60FPS 기준)
+        const speedFactor = deltaTime / 16.67;
+
+        // 배경 속도 고정 (눈의 피로 방지)
+        // 게임 속도가 빨라져도 배경은 초기 속도(3)로 유지하여 어지러움 방지
+        const backgroundSpeed = 3;
+
+        this.x1 -= backgroundSpeed * speedFactor;
+        this.x2 -= backgroundSpeed * speedFactor;
 
         // 첫 번째 이미지가 화면 왼쪽으로 완전히 사라지면 두 번째 이미지 뒤로 이동
         if (this.x1 <= -this.game.width) {
@@ -32,7 +44,7 @@ export class Background {
     }
 
     draw(ctx) {
-        if (this.image.complete) {
+        if (this.image.complete && this.image.naturalWidth > 0) {
             // 이미지 2장을 연속해서 그림
             // 화면 크기에 꽉 차게 그림 (stretch)
             // 틈새(흰색 실선) 방지를 위해 너비를 1px 더 크게 그림 (오버랩)

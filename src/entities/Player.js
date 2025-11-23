@@ -51,6 +51,9 @@ export class Player {
     }
 
     update(input, deltaTime) {
+        // 프레임 레이트 독립적인 속도 보정
+        const speedFactor = deltaTime / 16.67;
+
         this.checkCollision();
 
         // 상태 관리 (State Management)
@@ -103,21 +106,21 @@ export class Player {
         }
 
         // 물리 엔진 (수직 이동)
-        this.y += this.vy;
+        this.y += this.vy * speedFactor;
 
         // 점프 시 약간 앞으로 이동 (25% 위치 기준)
         if (this.currentState === this.states.JUMP) {
             if (this.x < 250) { // 200 + 50
-                this.x += 0.5;
+                this.x += 0.5 * speedFactor;
             }
         } else {
             if (this.x > 200) { // 원래 위치로 복귀
-                this.x -= 2;
+                this.x -= 2 * speedFactor;
             }
         }
 
         if (!this.onGround()) {
-            this.vy += this.weight;
+            this.vy += this.weight * speedFactor;
         } else {
             this.vy = 0;
             if (this.currentState !== this.states.JUMP) {

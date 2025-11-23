@@ -23,8 +23,8 @@ export class Obstacle {
         this.frameTimer = 0;
 
         // 장애물 타입 결정
-        // 60% 확률로 지상 장애물, 40% 확률로 공중 장애물
-        const isGround = Math.random() < 0.6;
+        // 70% 확률로 지상 장애물, 30% 확률로 공중 장애물
+        const isGround = Math.random() < 0.7;
 
         if (isGround) {
             // [지상 장애물] - 뒷골목 테마
@@ -59,8 +59,11 @@ export class Obstacle {
     }
 
     update(deltaTime) {
+        // 프레임 레이트 독립적인 속도 보정
+        const speedFactor = deltaTime / 16.67;
+
         // 왼쪽으로 이동
-        this.x -= this.game.gameSpeed;
+        this.x -= this.game.gameSpeed * speedFactor;
 
         // 화면 왼쪽으로 완전히 벗어나면 삭제 표시
         if (this.x + this.width < 0) {
