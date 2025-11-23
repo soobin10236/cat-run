@@ -12,7 +12,7 @@ export class Player {
         this.width = 80; // 화면에 표시될 너비 (50 -> 80으로 증가)
         this.height = 80; // 화면에 표시될 높이
         this.originalHeight = 80; // 그리기용 원래 높이 (찌그러짐 방지)
-        this.x = 50; // 화면 왼쪽 고정 위치
+        this.x = 200; // 화면 왼쪽에서 25% 위치 (800px 기준)
         this.y = this.game.height - this.height - GROUND_OFFSET; // 초기 바닥 위치
 
         this.vy = 0; // 수직 속도
@@ -105,13 +105,13 @@ export class Player {
         // 물리 엔진 (수직 이동)
         this.y += this.vy;
 
-        // 점프 시 약간 앞으로 이동
+        // 점프 시 약간 앞으로 이동 (25% 위치 기준)
         if (this.currentState === this.states.JUMP) {
-            if (this.x < 150) {
+            if (this.x < 250) { // 200 + 50
                 this.x += 0.5;
             }
         } else {
-            if (this.x > 50) {
+            if (this.x > 200) { // 원래 위치로 복귀
                 this.x -= 2;
             }
         }
