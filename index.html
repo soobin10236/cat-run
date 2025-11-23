@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cat Run Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas" width="800" height="400"></canvas>
+
+        <!-- 시작 화면 -->
+        <div id="start-screen" class="ui-screen">
+            <h1>Cat Run</h1>
+            <p>Press Start to Play</p>
+            <button id="start-btn">Start Game</button>
+        </div>
+
+        <div id="ui-layer">
+            <div id="score">Score: <span id="score-value">0</span></div>
+            <button id="pause-btn">⏸️</button>
+            <button id="mute-btn">🔊</button>
+        </div>
+
+        <div id="pause-overlay" class="hidden ui-screen">
+            <h1>PAUSED</h1>
+            <p>Press P or click button to resume</p>
+        </div>
+
+        <div id="game-over-screen" class="hidden ui-screen">
+            <h1>GAME OVER</h1>
+            <p>Score: <span id="final-score">0</span></p>
+            <button id="restart-btn">다시 하기 (R)</button>
+        </div>
+    </div>
+
+    <script type="module" src="src/main.js"></script>
+</body>
+
+</html>

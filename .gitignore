@@ -1,0 +1,41 @@
+# 로컬 개발 서버 (개인 경로 포함)
+server.ps1
+
+# 환경 변수
+.env
+.env.local
+
+# 시스템 파일
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 로그
+*.log
+npm-debug.log*
+
+# 임시 파일
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# IDE 설정
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Node modules (혹시 나중에 추가할 경우)
+node_modules/
+
+# 빌드 출력 (사용하지 않지만 대비)
+dist/
+build/
+
+# OS 파일
+*.bak
+*~
+
+# PowerShell 실행 로그
+*.ps1.log
