@@ -1,25 +1,34 @@
 # 🐱 Cat Run Game - 개발자 가이드
 
+## 📸 스크린샷
+| 게임 플레이 | 리더보드 & 신기록 |
+|:---:|:---:|
+| ![Game Play](src/assets/images/screenshot_play.png) | ![Leaderboard](src/assets/images/screenshot_leaderboard.png) |
+> *이미지를 `src/assets/images/` 경로에 추가하거나 링크를 수정하세요.*
+
 ## 📋 목차
 1. [프로젝트 개요](#프로젝트-개요)
 2. [기술 스택](#기술-스택)
 3. [프로젝트 구조](#프로젝트-구조)
 4. [게임 설계](#게임-설계)
-5. [주요 클래스 설명](#주요-클래스-설명)
-6. [게임 밸런스 수치](#게임-밸런스-수치)
-7. [개발 환경 설정](#개발-환경-설정)
-8. [수정 가이드](#수정-가이드)
+5. [Firebase 기능](#firebase-기능)
+6. [주요 클래스 설명](#주요-클래스-설명)
+7. [게임 밸런스 수치](#게임-밸런스-수치)
+8. [개발 환경 설정](#개발-환경-설정)
+9. [수정 가이드](#수정-가이드)
 
 ---
 
 ## 프로젝트 개요
 
-**Cat Run Game**은 HTML5 Canvas와 Vanilla JavaScript로 제작된 무한 러닝 게임입니다.
+**Cat Run Game**은 HTML5 Canvas와 Vanilla JavaScript로 제작된 무한 러닝 게임입니다. Firebase를 연동하여 실시간 리더보드 기능을 제공합니다.
 
 ### 게임 컨셉
 - **장르**: 2D 무한 러닝 (Endless Runner)
 - **테마**: 뒷골목을 달리는 고양이
-- **조작**: 점프(↑/Space), 슬라이드(↓)
+- **조작**: 
+  - **PC**: 점프(↑/Space), 슬라이드(↓)
+  - **Mobile**: 터치 버튼 (점프/슬라이드)
 - **목표**: 장애물을 피하고 아이템을 수집하며 최고 점수 달성
 
 ---
@@ -29,17 +38,22 @@
 ### 코어 기술
 - **HTML5 Canvas**: 게임 렌더링
 - **Vanilla JavaScript (ES6+)**: 게임 로직
-- **CSS3**: UI 스타일링
+- **CSS3**: UI 스타일링 (반응형 디자인, 글래스모피즘)
 - **Web Audio API**: 효과음 재생
 
+### 백엔드 (BaaS)
+- **Firebase Firestore**: 실시간 데이터베이스 (점수 저장)
+- **Firebase Hosting**: 웹 호스팅 (예정)
+
 ### 주요 기능
-- ✅ 스프라이트 애니메이션 (플레이어, 드론)
-- ✅ 물리 엔진 (중력, 가변 점프)
-- ✅ 충돌 감지 (AABB)
-- ✅ 동적 난이도 조절
-- ✅ 일시정지 기능
-- ✅ 탭 전환 시 자동 일시정지
-- ✅ BGM 및 효과음
+- ✅ **스프라이트 애니메이션** (플레이어, 드론)
+- ✅ **물리 엔진** (중력, 가변 점프)
+- ✅ **충돌 감지** (AABB, 히트박스 최적화)
+- ✅ **동적 난이도 조절** (속도/장애물 빈도)
+- ✅ **실시간 리더보드** (Top 10 랭킹)
+- ✅ **모바일 최적화** (터치 컨트롤, 반응형 레이아웃)
+- ✅ **UI/UX 개선** (카드형 모달, 직관적인 버튼 배치)
+- ✅ **이미지 프리로딩** (리소스 미리 로드, 로딩 상태 표시)
 
 ---
 
@@ -48,12 +62,12 @@
 ```
 scratch/
 ├── index.html              # 메인 HTML (게임 컨테이너, UI)
-├── style.css               # 전역 스타일
+├── style.css               # 전역 스타일 (모바일 대응)
 ├── server.ps1              # 로컬 개발 서버 (PowerShell)
 │
 └── src/
     ├── main.js             # 진입점 (게임 초기화)
-    ├── GameManager.js      # 게임 루프, 상태 관리, 충돌 처리
+    ├── GameManager.js      # 게임 루프, 상태 관리, Firebase 연동
     │
     ├── constants/
     │   └── Assets.js       # 리소스 경로 관리
@@ -65,8 +79,9 @@ scratch/
     │   └── Background.js   # 배경 (무한 스크롤)
     │
     ├── utils/
-    │   ├── InputHandler.js # 키보드 입력 처리
-    │   └── AudioManager.js # 오디오 재생 관리
+    │   ├── InputHandler.js # 키보드/터치 입력 처리
+    │   ├── AudioManager.js # 오디오 재생 관리
+    │   └── FirebaseManager.js # Firebase 통신 관리
     │
     └── assets/
         ├── images/         # 이미지 리소스
@@ -119,28 +134,66 @@ GameManager {
 
 ---
 
+## Firebase 기능
+
+### 1. 리더보드 시스템
+- **데이터베이스**: Cloud Firestore
+- **컬렉션**: `scores`
+- **기능**:
+  - 상위 10개 점수 실시간 조회 (`orderBy('score', 'desc').limit(10)`)
+  - 게임 종료 시 10위 진입 여부 자동 체크
+  - 닉네임 입력 후 점수 저장
+
+### 2. 데이터 구조 (Firestore)
+```json
+// scores 컬렉션 문서 예시
+{
+  "playerName": "CatLover",
+  "score": 1500,
+  "timestamp": Timestamp(seconds=1706000000, nanoseconds=0),
+  "date": "2025. 1. 23."
+}
+```
+
+### 3. 🔒 보안 규칙 (Security Rules)
+프로덕션 배포 시 아래 규칙을 Firestore에 적용하여 데이터 무결성을 보호하세요.
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /scores/{scoreId} {
+      // 읽기는 누구나 가능
+      allow read: if true;
+      
+      // 쓰기 조건:
+      // 1. 점수는 숫자여야 함
+      // 2. 점수는 0 이상 100,000 이하 (비정상적인 점수 방지)
+      // 3. 이름은 10자 이내
+      allow create: if request.resource.data.score is number
+                    && request.resource.data.score >= 0
+                    && request.resource.data.score <= 100000
+                    && request.resource.data.playerName.size() <= 10;
+                    
+      // 수정 및 삭제 불가 (기록 보존)
+      allow update, delete: if false;
+    }
+  }
+}
+```
+
+---
+
 ## 주요 클래스 설명
 
 ### 1. **GameManager** (게임 총괄)
-**역할**: 게임 루프, 엔티티 관리, 충돌 감지, UI 업데이트
+**역할**: 게임 루프, 엔티티 관리, 충돌 감지, UI 업데이트, Firebase 연동
 
 **주요 메서드**:
 - `update(deltaTime)`: 게임 상태 업데이트
 - `draw()`: 화면 렌더링
 - `checkCollision(a, b)`: AABB 충돌 감지
-- `togglePause()`: 일시정지 토글
-- `restart()`: 게임 재시작
-
-**핵심 로직**:
-```javascript
-// 장애물 생성 간격 동적 계산
-const speedReduction = this.gameSpeed * 350;
-const scoreReduction = this.score * 0.2;
-const baseInterval = 2200 - speedReduction - scoreReduction;
-this.obstacleInterval = Math.max(baseInterval, 300) + Math.random() * 300;
-```
-
----
+- `submitScore()`: 점수 제출 및 리더보드 갱신
 
 ### 2. **Player** (플레이어)
 **역할**: 고양이 캐릭터 조작, 애니메이션, 물리 연산
@@ -150,15 +203,9 @@ this.obstacleInterval = Math.max(baseInterval, 300) + Math.random() * 300;
 - `JUMP`: 점프 (프레임 8-11)
 - `SLIDE`: 슬라이드 (프레임 12-15)
 
-**핵심 로직**:
-```javascript
-// 가변 점프: 키를 빨리 떼면 낮게 점프
-if (!키입력 && this.vy < 0) {
-    this.vy *= 0.5;
-}
-```
-
----
+**모바일 최적화**:
+- 화면 왼쪽 25% 위치에 고정 (시야 확보)
+- 점프 시 약간 앞으로 이동하여 역동감 부여
 
 ### 3. **Obstacle** (장애물)
 **역할**: 장애물 생성 및 관리
@@ -166,47 +213,6 @@ if (!키입력 && this.vy < 0) {
 **타입**:
 - **지상 장애물** (60%): 허들(100px), 쓰레기통(100px, 30%)
 - **공중 장애물** (40%): 드론 (80x80, 애니메이션)
-
-**생성 로직**:
-```javascript
-const isGround = Math.random() < 0.6;
-if (isGround) {
-    // 지상 장애물
-    if (Math.random() < 0.3) {
-        // 긴 장애물 (쓰레기통)
-    } else {
-        // 일반 장애물 (허들)
-    }
-} else {
-    // 공중 장애물 (드론)
-    this.isAnimated = true; // 스프라이트 애니메이션
-}
-```
-
----
-
-### 4. **Item** (아이템)
-**역할**: 황금 생선 아이템 (보너스 점수)
-
-**보상**: +50점
-
-**출현**: 30% 확률, 랜덤 높이
-
----
-
-### 5. **Background** (배경)
-**역할**: 무한 스크롤 배경
-
-**구현**:
-```javascript
-// 이미지 2장을 이어붙여 무한 스크롤
-this.x1 -= gameSpeed;
-this.x2 -= gameSpeed;
-
-if (this.x1 <= -width) {
-    this.x1 = this.x2 + width;
-}
-```
 
 ---
 
@@ -219,6 +225,7 @@ height: 80px (슬라이드 시 56px)
 jumpPower: 12
 weight (중력): 0.5
 히트박스: 50% (40x40)
+초기 위치: x=200 (화면 25%)
 ```
 
 ### 장애물
@@ -229,22 +236,8 @@ weight (중력): 0.5
 
 // 공중 장애물 (드론)
 크기: 80x80
-히트박스: X축 60%, Y축 20% (납작함)
+히트박스: X축 60%, Y축 40% (납작함)
 애니메이션: 1x4 스프라이트, 10 FPS
-```
-
-### 아이템
-```javascript
-크기: 50x50
-히트박스: 80% (쉽게 획득)
-보너스 점수: +50점
-```
-
-### 게임 속도
-```javascript
-초기 속도: 3
-최대 속도: 4.5 (눈의 피로 방지)
-속도 증가율: +0.001 per frame
 ```
 
 ### 난이도 조절
@@ -252,19 +245,26 @@ weight (중력): 0.5
 // 장애물 생성 간격 (ms)
 기본 간격: 2200ms
 속도 감소: gameSpeed * 350
-점수 감소: score * 0.2
+점수 감소: score * 0.1
 최소 간격: 300ms
 랜덤 편차: ±300ms
 ```
 
-### 점수 계산
-```javascript
-// 거리 점수
-score += (gameSpeed * deltaTime) * 0.01
+---
 
-// 아이템 보너스
-score += 50
-```
+## 🎯 성능 최적화
+
+### 현재 최적화 사항
+1. ✅ **deltaTime 캡핑**: 탭 전환 시 비정상 동작 방지
+2. ✅ **엔티티 풀링**: 화면 밖 엔티티 즉시 삭제
+3. ✅ **requestAnimationFrame**: 브라우저 최적화 활용
+4. ✅ **Page Visibility API**: 비활성 탭 자동 일시정지
+5. ✅ **이미지 프리로딩**: 게임 시작 전 리소스 미리 로드하여 깜빡임 방지
+
+### 추가 최적화 아이디어
+- 스프라이트 아틀라스 사용
+- 오프스크린 캔버스 활용
+- Web Worker로 물리 연산 분리
 
 ---
 
@@ -286,27 +286,9 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 http://localhost:8000
 ```
 
-### 2. 파일 구조 유지
-- **이미지**: `src/assets/images/`에 저장
-- **오디오**: `src/assets/audio/`에 저장
-- **스프라이트 시트**: 4x4 그리드 (플레이어), 1x4 그리드 (드론)
-
-### 3. 리소스 경로 관리
-모든 리소스 경로는 `src/constants/Assets.js`에서 관리:
-
-```javascript
-export const ASSETS = {
-    IMAGES: {
-        PLAYER: 'src/assets/images/cat_spritesheet_v5.png',
-        OBSTACLE_AIR: 'src/assets/images/obstacle_air.png',
-        // ...
-    },
-    AUDIO: {
-        BGM: 'src/assets/audio/bgm.mp3',
-        JUMP: 'src/assets/audio/meow.mp3'
-    }
-};
-```
+### 2. Firebase 설정
+1. `src/utils/FirebaseManager.js` 파일에서 `firebaseConfig` 객체 수정
+2. Firestore Database 생성 (테스트 모드 권장)
 
 ---
 
@@ -324,7 +306,7 @@ this.MAX_GAME_SPEED = 4.5; // 값 조정
 ```javascript
 // GameManager.js - update()
 const speedReduction = this.gameSpeed * 350; // 계수 조정 (↑ 더 빠르게)
-const scoreReduction = this.score * 0.2;     // 계수 조정 (↑ 더 빠르게)
+const scoreReduction = this.score * 0.1;     // 계수 조정 (↑ 더 빠르게)
 const baseInterval = 2200;                   // 기본값 조정 (↓ 더 자주)
 const minInterval = 300;                     // 최소값 조정 (↓ 더 촘촘)
 ```
@@ -335,190 +317,6 @@ const minInterval = 300;                     // 최소값 조정 (↓ 더 촘촘
 this.jumpPower = 12; // 값 조정 (↑ 더 높게)
 this.weight = 0.5;   // 값 조정 (↑ 더 빠르게 떨어짐)
 ```
-
-#### 4. 히트박스 조정
-```javascript
-// GameManager.js - checkCollision()
-const aWidth = a.width * 0.5;  // 플레이어 (↓ 더 쉽게)
-scaleX = 0.7; // 지상 장애물 (↓ 더 쉽게)
-scaleY = 0.2; // 드론 Y축 (↓ 더 쉽게)
-```
-
----
-
-### 🎨 그래픽 교체
-
-#### 1. 플레이어 스프라이트 시트 교체
-```javascript
-// Assets.js
-PLAYER: 'src/assets/images/새_스프라이트.png'
-
-// Player.js - draw()
-// 4x4 그리드 유지 필요
-// 프레임 0-7: 달리기
-// 프레임 8-11: 점프
-// 프레임 12-15: 슬라이드
-```
-
-#### 2. 배경 이미지 교체
-```javascript
-// Assets.js
-BACKGROUND: 'src/assets/images/새_배경.png'
-
-// 주의: 이미지가 반복되므로 좌우가 이어지도록 제작
-```
-
----
-
-### 🔊 사운드 조정
-
-#### 1. 볼륨 조절
-```javascript
-// AudioManager.js - constructor
-this.bgmAudio.volume = 0.3;    // BGM (0.0 ~ 1.0)
-this.jumpAudio.volume = 0.2;   // 점프 효과음
-```
-
-#### 2. 사운드 파일 교체
-```javascript
-// Assets.js
-BGM: 'src/assets/audio/새_배경음.mp3',
-JUMP: 'src/assets/audio/새_점프음.mp3'
-```
-
----
-
-### 🆕 새로운 엔티티 추가
-
-#### 예시: 파워업 아이템 추가
-
-**1. 클래스 생성** (`src/entities/PowerUp.js`):
-```javascript
-export class PowerUp {
-    constructor(game) {
-        this.game = game;
-        this.width = 50;
-        this.height = 50;
-        this.x = this.game.width;
-        this.y = /* 랜덤 높이 */;
-        this.markedForDeletion = false;
-    }
-    
-    update(deltaTime) {
-        this.x -= this.game.gameSpeed;
-        if (this.x + this.width < 0) {
-            this.markedForDeletion = true;
-        }
-    }
-    
-    draw(ctx) {
-        // 그리기 로직
-    }
-}
-```
-
-**2. GameManager에 통합**:
-```javascript
-// constructor
-this.powerUps = [];
-
-// update()
-if (/* 생성 조건 */) {
-    this.powerUps.push(new PowerUp(this));
-}
-
-this.powerUps.forEach(powerUp => {
-    powerUp.update(deltaTime);
-    if (this.checkCollision(this.player, powerUp)) {
-        // 파워업 효과 적용
-    }
-});
-
-// draw()
-this.powerUps.forEach(powerUp => powerUp.draw(this.ctx));
-```
-
----
-
-## 🐛 디버깅 팁
-
-### 1. 히트박스 시각화
-```javascript
-// Player.js, Obstacle.js, Item.js - draw()
-ctx.strokeStyle = 'red';
-ctx.strokeRect(this.x, this.y, this.width, this.height);
-```
-
-### 2. 콘솔 로그
-```javascript
-// GameManager.js - update()
-console.log('Score:', this.score, 'Speed:', this.gameSpeed);
-```
-
-### 3. 테스트 모드
-```javascript
-// GameManager.js - constructor
-this.gameSpeed = this.MAX_GAME_SPEED; // 최고 속도로 시작
-```
-
----
-
-## 📝 코드 스타일 가이드
-
-### 명명 규칙
-- **클래스**: PascalCase (`GameManager`, `Player`)
-- **메서드/변수**: camelCase (`update`, `gameSpeed`)
-- **상수**: UPPER_SNAKE_CASE (`MAX_GAME_SPEED`, `ASSETS`)
-
-### 주석
-- **파일 헤더**: 클래스 역할 설명
-- **메서드**: JSDoc 형식
-- **중요 로직**: 인라인 주석
-
----
-
-## 🎯 성능 최적화
-
-### 현재 최적화 사항
-1. ✅ **deltaTime 캡핑**: 탭 전환 시 비정상 동작 방지
-2. ✅ **엔티티 풀링**: 화면 밖 엔티티 즉시 삭제
-3. ✅ **requestAnimationFrame**: 브라우저 최적화 활용
-4. ✅ **Page Visibility API**: 비활성 탭 자동 일시정지
-
-### 추가 최적화 아이디어
-- 스프라이트 아틀라스 사용
-- 오프스크린 캔버스 활용
-- Web Worker로 물리 연산 분리
-
----
-
-## 🚀 배포
-
-### GitHub Pages 배포
-1. GitHub 저장소 생성
-2. 코드 푸시
-3. Settings → Pages → Source: main branch
-
-### 정적 호스팅
-- Netlify, Vercel, Cloudflare Pages 등 사용 가능
-
----
-
-## 📚 참고 자료
-
-- [MDN Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
-- [MDN Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
-- [requestAnimationFrame](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame)
-- [Page Visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API)
-
----
-
-## 🤝 기여 가이드
-
-1. 이슈 등록 또는 기능 제안
-2. 브랜치 생성 (`feature/새기능`)
-3. 코드 작성 및 테스트
-4. Pull Request 생성
 
 ---
 

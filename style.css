@@ -77,23 +77,40 @@ canvas {
     margin-bottom: 30px;
 }
 
+/* 버튼 스타일 개선 */
 button {
-    padding: 15px 30px;
-    font-size: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
     background-color: #2ecc71;
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 25px;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }
 
 button:hover {
     background-color: #27ae60;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.25);
+}
+
+button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .hidden {
     display: none !important;
+}
+
+/* 게임 오버 화면 버튼 컨테이너 */
+.button-container {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
 }
 
 #pause-btn {
@@ -114,6 +131,7 @@ button:hover {
     padding: 0;
     pointer-events: auto;
     transition: background-color 0.2s, transform 0.1s;
+    box-shadow: none;
 }
 
 #pause-btn:hover {
@@ -143,6 +161,7 @@ button:hover {
     padding: 0;
     pointer-events: auto;
     transition: background-color 0.2s, transform 0.1s;
+    box-shadow: none;
 }
 
 #mute-btn:hover {
@@ -183,6 +202,7 @@ button:hover {
     -webkit-tap-highlight-color: transparent;
     pointer-events: auto;
     transition: all 0.2s;
+    box-shadow: none;
 }
 
 #jump-btn {
@@ -196,6 +216,12 @@ button:hover {
 .mobile-btn:active {
     background: rgba(46, 204, 113, 0.3);
     font-weight: bold;
+}
+
+.mobile-btn .btn-icon {
+    font-size: 40px;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.2);
 }
 
 /* 세로모드 경고 */
@@ -287,4 +313,128 @@ button:hover {
     .rotate-warning {
         display: flex !important;
     }
+}
+
+/* 리더보드 스타일 */
+.leaderboard-container {
+    background: rgba(0, 0, 0, 0.6);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    max-height: 60vh;
+    overflow-y: auto;
+    width: 80%;
+    max-width: 600px;
+}
+
+#leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: white;
+    font-size: 18px;
+}
+
+#leaderboard-table th,
+#leaderboard-table td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#leaderboard-table th {
+    background-color: rgba(46, 204, 113, 0.5);
+    color: white;
+}
+
+#leaderboard-table tr:nth-child(1) td {
+    color: #f1c40f;
+    font-weight: bold;
+}
+
+/* 1등 금색 */
+#leaderboard-table tr:nth-child(2) td {
+    color: #bdc3c7;
+    font-weight: bold;
+}
+
+/* 2등 은색 */
+#leaderboard-table tr:nth-child(3) td {
+    color: #cd7f32;
+    font-weight: bold;
+}
+
+/* 3등 동색 */
+
+.secondary-btn {
+    background-color: #3498db;
+}
+
+.secondary-btn:hover {
+    background-color: #2980b9;
+}
+
+/* 이름 입력 모달 (카드 스타일) */
+.modal-content {
+    background-color: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    width: 90%;
+    max-width: 400px;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-content h1 {
+    font-size: 32px;
+    color: #f39c12;
+    /* 골드 컬러 */
+    margin-bottom: 10px;
+    text-shadow: none;
+}
+
+.modal-content p {
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 25px;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+#player-name-input {
+    padding: 12px;
+    font-size: 16px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    width: 60%;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+#player-name-input:focus {
+    border-color: #2ecc71;
+}
+
+#submit-score-btn {
+    padding: 12px 20px;
+    font-size: 16px;
+    border-radius: 8px;
+    width: auto;
+    white-space: nowrap;
 }

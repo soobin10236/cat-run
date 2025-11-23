@@ -33,7 +33,46 @@
         <div id="game-over-screen" class="hidden ui-screen">
             <h1>GAME OVER</h1>
             <p>Score: <span id="final-score">0</span></p>
-            <button id="restart-btn">다시 하기 (R)</button>
+            <div class="button-container">
+                <button id="restart-btn">다시 하기 (R)</button>
+                <button id="show-leaderboard-btn" class="secondary-btn">랭킹 보기</button>
+            </div>
+        </div>
+
+        <!-- 리더보드 화면 -->
+        <div id="leaderboard-screen" class="hidden ui-screen">
+            <h1>🏆 Hall of Fame 🏆</h1>
+            <div class="leaderboard-container">
+                <table id="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Name</th>
+                            <th>Score</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                        <!-- 자바스크립트로 데이터 로드됨 -->
+                        <tr>
+                            <td colspan="4">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <button id="leaderboard-close-btn">닫기</button>
+        </div>
+
+        <!-- 이름 입력 모달 -->
+        <div id="name-input-modal" class="hidden ui-screen">
+            <div class="modal-content">
+                <h1>New Record! 🎉</h1>
+                <p>축하합니다! 상위 10위에 진입했습니다.</p>
+                <div class="input-group">
+                    <input type="text" id="player-name-input" placeholder="이름 입력 (최대 10자)" maxlength="10">
+                    <button id="submit-score-btn">등록</button>
+                </div>
+            </div>
         </div>
 
         <!-- 모바일 터치 컨트롤 (모바일에서만 표시) -->

@@ -4,6 +4,7 @@ import { Obstacle } from './entities/Obstacle.js';
 import { Item } from './entities/Item.js';
 import { Background } from './entities/Background.js';
 import { AudioManager } from './utils/AudioManager.js';
+import { FirebaseManager } from './utils/FirebaseManager.js';
 
 /**
  * 게임 매니저 클래스 (GameManager)
@@ -30,6 +31,7 @@ export class GameManager {
         this.input = new InputHandler(); // 입력 처리기
         this.background = new Background(this); // 배경
         this.player = new Player(this); // 플레이어
+        this.firebaseManager = new FirebaseManager(); // Firebase 매니저
 
         this.obstacles = []; // 장애물 배열
         this.items = []; // 아이템 배열
@@ -47,6 +49,17 @@ export class GameManager {
         this.restartBtn = document.getElementById('restart-btn');
         this.pauseBtn = document.getElementById('pause-btn');
         this.muteBtn = document.getElementById('mute-btn');
+
+        // 리더보드 관련 UI
+        this.leaderboardScreen = document.getElementById('leaderboard-screen');
+        this.leaderboardBody = document.getElementById('leaderboard-body');
+        this.showLeaderboardBtn = document.getElementById('show-leaderboard-btn');
+        this.leaderboardCloseBtn = document.getElementById('leaderboard-close-btn');
+
+        // 이름 입력 모달 관련 UI
+        this.nameInputModal = document.getElementById('name-input-modal');
+        this.playerNameInput = document.getElementById('player-name-input');
+        this.submitScoreBtn = document.getElementById('submit-score-btn');
 
         this.bindEvents();
 
@@ -210,6 +223,8 @@ export class GameManager {
         this.itemTimer = 0;
 
         this.gameOverScreen.classList.add('hidden');
+        this.leaderboardScreen.classList.add('hidden'); // 리더보드 숨김
+        this.nameInputModal.classList.add('hidden'); // 이름 입력 모달 숨김
         this.updateScoreUI();
 
         this.background = new Background(this);
@@ -239,9 +254,22 @@ export class GameManager {
         this.restartBtn.addEventListener('click', () => this.restart());
         this.pauseBtn.addEventListener('click', () => this.togglePause());
         this.muteBtn.addEventListener('click', () => this.toggleMute());
+
+        // 리더보드 관련 이벤트
+        this.showLeaderboardBtn.addEventListener('click', () => this.showLeaderboard());
+        this.leaderboardCloseBtn.addEventListener('click', () => {
+            this.leaderboardScreen.classList.add('hidden');
+            this.gameOverScreen.classList.remove('hidden'); // 게임 오버 화면 다시 표시
+        });
+        this.submitScoreBtn.addEventListener('click', () => this.submitScore());
+
         window.addEventListener('keydown', (e) => {
             if (this.isGameOver && e.key.toLowerCase() === 'r') {
-                this.restart();
+                // 모달이나 리더보드가 떠있지 않을 때만 R키로 재시작
+                if (this.nameInputModal.classList.contains('hidden') &&
+                    this.leaderboardScreen.classList.contains('hidden')) {
+                    this.restart();
+                }
             }
             // P 키로 일시정지/재개
             if (e.key.toLowerCase() === 'p') {
@@ -277,13 +305,95 @@ export class GameManager {
         this.scoreElement.innerText = Math.floor(this.score);
     }
 
-    gameOver() {
+    async gameOver() {
         this.isGameOver = true;
         this.gameOverScreen.classList.remove('hidden');
-        this.finalScoreElement.innerText = Math.floor(this.score);
+        const finalScore = Math.floor(this.score);
+        this.finalScoreElement.innerText = finalScore;
 
         this.audioManager.stopBgm(); // BGM 정지
         this.audioManager.playGameOverSound(); // 게임 오버 효과음
+
+        // 상위 10위 체크
+        const isTopTen = await this.firebaseManager.isTopTen(finalScore);
+        if (isTopTen) {
+            // 0.5초 뒤에 모달 표시 (게임 오버 인지 후)
+            setTimeout(() => {
+                this.gameOverScreen.classList.add('hidden');
+                this.nameInputModal.classList.remove('hidden');
+                this.playerNameInput.focus();
+            }, 500);
+        }
+    }
+
+    /**
+     * 점수 제출 처리
+     */
+    async submitScore() {
+        const name = this.playerNameInput.value.trim();
+        if (!name) {
+            alert("이름을 입력해주세요!");
+            return;
+        }
+        if (name.length > 10) {
+            alert("이름은 10자 이내로 입력해주세요.");
+            return;
+        }
+
+        const score = Math.floor(this.score);
+
+        // 버튼 비활성화 (중복 제출 방지)
+        this.submitScoreBtn.disabled = true;
+        this.submitScoreBtn.innerText = "저장 중...";
+
+        const success = await this.firebaseManager.saveScore(name, score);
+
+        if (success) {
+            this.nameInputModal.classList.add('hidden');
+            this.showLeaderboard(); // 저장 후 바로 리더보드 보여주기
+        } else {
+            alert("점수 저장에 실패했습니다. 다시 시도해주세요.");
+        }
+
+        // 버튼 복구
+        this.submitScoreBtn.disabled = false;
+        this.submitScoreBtn.innerText = "등록";
+        this.playerNameInput.value = ""; // 입력창 초기화
+    }
+
+    /**
+     * 리더보드 표시
+     */
+    async showLeaderboard() {
+        this.gameOverScreen.classList.add('hidden');
+        this.leaderboardScreen.classList.remove('hidden');
+        this.leaderboardBody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
+
+        const scores = await this.firebaseManager.getTopScores();
+
+        this.leaderboardBody.innerHTML = '';
+        if (scores.length === 0) {
+            this.leaderboardBody.innerHTML = '<tr><td colspan="4">아직 기록이 없습니다. 첫 번째 주인공이 되어보세요!</td></tr>';
+            return;
+        }
+
+        scores.forEach((entry, index) => {
+            const row = document.createElement('tr');
+
+            // 날짜 포맷팅 (timestamp가 있으면 변환, 없으면 date 문자열 사용)
+            let dateStr = entry.date || '-';
+            if (entry.timestamp && entry.timestamp.toDate) {
+                dateStr = entry.timestamp.toDate().toLocaleDateString();
+            }
+
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${entry.playerName}</td>
+                <td>${entry.score}</td>
+                <td>${dateStr}</td>
+            `;
+            this.leaderboardBody.appendChild(row);
+        });
     }
 
     /**
