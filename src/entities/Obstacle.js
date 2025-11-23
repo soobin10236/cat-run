@@ -3,6 +3,7 @@
  * 플레이어가 피해야 할 장애물을 생성하고 관리합니다.
  */
 import { ASSETS } from '../constants/Assets.js';
+import { Projectile } from './Projectile.js';
 
 export class Obstacle {
     constructor(game) {
@@ -21,6 +22,9 @@ export class Obstacle {
         this.fps = 10; // 애니메이션 속도
         this.frameInterval = 1000 / this.fps;
         this.frameTimer = 0;
+
+        // 총알 발사 여부 (드론 전용)
+        this.hasFired = false;
 
         // 장애물 타입 결정
         // 70% 확률로 지상 장애물, 30% 확률로 공중 장애물
@@ -80,6 +84,27 @@ export class Obstacle {
                 this.frameTimer = 0;
             } else {
                 this.frameTimer += deltaTime;
+            }
+
+            // [NEW] 드론 공격 로직 (점수 5000점 이상일 때)
+            if (this.game.score >= 5000 && !this.hasFired) {
+                // 화면에 완전히 들어왔을 때 (오른쪽 끝에서 100px 안쪽)
+                // 그리고 플레이어보다 오른쪽에 있을 때
+                if (this.x < this.game.width - 100 && this.x > this.game.player.x) {
+                    // 플레이어 중앙을 조준
+                    const targetX = this.game.player.x + this.game.player.width / 2;
+                    const targetY = this.game.player.y + this.game.player.height / 2;
+
+                    // 총알 발사 (드론 중앙에서)
+                    const projectileX = this.x + this.width / 2;
+                    const projectileY = this.y + this.height / 2;
+
+                    this.game.projectiles.push(
+                        new Projectile(this.game, projectileX, projectileY, targetX, targetY)
+                    );
+
+                    this.hasFired = true;
+                }
             }
         }
     }
