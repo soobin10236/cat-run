@@ -87,7 +87,7 @@ export class Obstacle {
             }
 
             // [NEW] 드론 공격 로직 (점수 5000점 이상일 때)
-            if (this.game.score >= 5000 && !this.hasFired) {
+            if (this.game.score >= 50000 && !this.hasFired) {
                 // 화면에 완전히 들어왔을 때 (오른쪽 끝에서 100px 안쪽)
                 // 그리고 플레이어보다 오른쪽에 있을 때
                 if (this.x < this.game.width - 100 && this.x > this.game.player.x) {
