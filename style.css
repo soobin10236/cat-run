@@ -193,10 +193,17 @@ button:active {
 .mobile-btn {
     position: absolute;
     bottom: 5vmin;
-    width: clamp(70px, 20vmin, 110px);
-    height: clamp(70px, 20vmin, 110px);
-    background: transparent;
-    border: 3px solid rgba(255, 255, 255, 0.2);
+    /* 터치 영역 확장 */
+    width: clamp(140px, 40vmin, 220px); 
+    height: clamp(140px, 40vmin, 220px);
+
+    /* background와 border를 제거하고 box-shadow로 시각적인 링만 만듭니다. */
+    background: transparent; 
+    border: none;
+
+    /* box-shadow로 중앙에 얇고 작은 링을 시각적으로 구현 */
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+
     border-radius: 50%;
     display: flex;
     flex-direction: column;
@@ -207,7 +214,7 @@ button:active {
     -webkit-tap-highlight-color: transparent;
     pointer-events: auto;
     transition: all 0.2s;
-    box-shadow: none;
+
 }
 
 #jump-btn {
@@ -221,6 +228,7 @@ button:active {
 .mobile-btn:active {
     background: rgba(46, 204, 113, 0.3);
     font-weight: bold;
+    box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.5);
 }
 
 .mobile-btn .btn-icon {
