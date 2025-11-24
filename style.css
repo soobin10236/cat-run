@@ -225,19 +225,28 @@ button:active {
     right: 5vmin;
 }
 
-.mobile-btn:active {
-    background: transparent !important;
-    font-weight: bold;
+#jump-btn:active,
+#slide-btn:active {
+    /* 배경색을 누르기 전과 동일하게 완전 투명으로 유지 */
+    background: transparent !important; 
+    
+    /* 링 색상도 원래의 흰색/저투명도로 유지 */
     box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2) !important;
+    
+    /* 폰트 굵기 변화도 제거 */
+    font-weight: normal !important; 
 }
 
-.mobile-btn:active .btn-icon {
-    color: rgba(255, 255, 255, 0.2) !important;
+/* 3. 잔류 포커스 상태 (:focus) - 이 상태가 엉뚱한 버튼에 남아 초록색으로 변하는 것을 막습니다. */
+#jump-btn:focus,
+#slide-btn:focus {
+    background: transparent !important; 
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2) !important;
+    outline: none !important; /* 브라우저 기본 포커스 테두리 제거 */
 }
 
-.mobile-btn .btn-icon {
-    font-size: clamp(30px, 8vmin, 50px);
-    line-height: 1;
+.mobile-btn:active .btn-icon,
+.mobile-btn:focus .btn-icon {
     color: rgba(255, 255, 255, 0.2) !important;
 }
 
