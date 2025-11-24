@@ -198,11 +198,11 @@ button:active {
     height: clamp(140px, 40vmin, 220px);
 
     /* background와 border를 제거하고 box-shadow로 시각적인 링만 만듭니다. */
-    background: transparent; 
+    background: transparent !important;
     border: none;
 
     /* box-shadow로 중앙에 얇고 작은 링을 시각적으로 구현 */
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2) !important;
 
     border-radius: 50%;
     display: flex;
@@ -226,15 +226,19 @@ button:active {
 }
 
 .mobile-btn:active {
-    background: transparent;
+    background: transparent !important;
     font-weight: bold;
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2) !important;
+}
+
+.mobile-btn:active .btn-icon {
+    color: rgba(255, 255, 255, 0.2) !important;
 }
 
 .mobile-btn .btn-icon {
     font-size: clamp(30px, 8vmin, 50px);
     line-height: 1;
-    color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.2) !important;
 }
 
 /* 세로모드 경고 */
