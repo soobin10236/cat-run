@@ -29,7 +29,7 @@ export class GameManager {
         }
 
         // 게임 속도 설정
-        this.MAX_GAME_SPEED = 4.5; // 최대 게임 속도 제한 (눈의 피로 방지)
+        this.MAX_GAME_SPEED = 5.5; // 최대 게임 속도 변경(4.5=>5.5) (눈의 피로 방지)
         this.gameSpeed = 3; // 초기 게임 속도
 
         this.audioManager = new AudioManager(); // 오디오 매니저 인스턴스
@@ -56,11 +56,13 @@ export class GameManager {
 
         // UI 요소 가져오기
         this.scoreElement = document.getElementById('score-value');
+        this.distanceElement = document.getElementById('distance-value'); // 거리 표시 요소
         this.gameOverScreen = document.getElementById('game-over-screen');
         this.pauseOverlay = document.getElementById('pause-overlay');
         this.finalScoreElement = document.getElementById('final-score');
         this.restartBtn = document.getElementById('restart-btn');
         this.pauseBtn = document.getElementById('pause-btn');
+        this.resumeBtn = document.getElementById('resume-btn'); // 재개 버튼
         this.muteBtn = document.getElementById('mute-btn');
 
         // 리더보드 관련 UI
@@ -74,11 +76,26 @@ export class GameManager {
         this.playerNameInput = document.getElementById('player-name-input');
         this.submitScoreBtn = document.getElementById('submit-score-btn');
 
+        // 퍼센티지 관련 UI
+        this.percentileContainer = document.getElementById('percentile-container');
+        this.percentileValue = document.getElementById('percentile-value');
+        this.percentileMarker = document.getElementById('percentile-marker');
+
         this.bindEvents();
 
         // 게임 시작 전에도 화면을 그리기 위해 루프 시작 (update는 스킵됨)
         this.isGameStarted = false;
         this.isPaused = false;
+        this.distance = 0; // 달린 거리
+        this.sessionId = null; // 현재 게임 세션 ID
+        this.userId = localStorage.getItem('userId');
+
+        // User ID가 없으면 생성
+        if (!this.userId) {
+            this.userId = 'user_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('userId', this.userId);
+        }
+
         this.gameLoop(0);
     }
 
@@ -120,10 +137,11 @@ export class GameManager {
 
             // 다음 장애물 생성 간격 계산
             const speedReduction = this.gameSpeed * 250;
-            const scoreReduction = this.score * 0.1;
+            // 난이도 조절: 점수 반영 비율을 0.1 -> 0.05로 낮춰서 난이도 상승 속도 완화
+            const scoreReduction = this.score * 0.05;
             const baseInterval = 2300 - speedReduction - scoreReduction;
-            const safeInterval = Math.max(baseInterval, 500);
-            this.obstacleInterval = safeInterval + Math.random() * 500;
+            const safeInterval = Math.max(baseInterval, 600);
+            this.obstacleInterval = safeInterval + Math.random() * 700;
         } else {
             this.obstacleTimer += deltaTime;
         }
@@ -170,7 +188,11 @@ export class GameManager {
         this.items = this.items.filter(item => !item.markedForDeletion);
 
         // 점수 증가
-        this.score += (this.gameSpeed * deltaTime) * 0.01;
+        this.score += (this.gameSpeed * deltaTime) * 100;
+
+        // 거리 증가 (게임 속도 * 시간)
+        this.distance += (this.gameSpeed * deltaTime) * 0.001;
+
         this.updateScoreUI();
 
         // 게임 속도 점진적 증가
@@ -232,6 +254,7 @@ export class GameManager {
     restart() {
         this.isGameOver = false;
         this.score = 0;
+        this.distance = 0;
         this.gameSpeed = 3;
         this.obstacles = [];
         this.items = [];
@@ -242,6 +265,7 @@ export class GameManager {
         this.gameOverScreen.classList.add('hidden');
         this.leaderboardScreen.classList.add('hidden');
         this.nameInputModal.classList.add('hidden');
+        if (this.percentileContainer) this.percentileContainer.classList.add('hidden'); // 재시작 시 숨김
         this.updateScoreUI();
 
         this.background = new Background(this);
@@ -249,23 +273,40 @@ export class GameManager {
 
         this.audioManager.playBgm();
         this.lastTime = performance.now();
+
+        // 재시작 시 새로운 세션 시작
+        this.startSession();
     }
 
-    start() {
+    async start() {
         this.isGameStarted = true;
         this.lastTime = performance.now();
         this.audioManager.playBgm();
+
+        // 게임 시작 시 세션 생성
+        await this.startSession();
+    }
+
+    async startSession() {
+        this.sessionId = await this.firebaseManager.startSession(this.userId, GAME_VERSION);
+        console.log("Game Session Started:", this.sessionId);
     }
 
     bindEvents() {
         this.restartBtn.addEventListener('click', () => this.restart());
         this.pauseBtn.addEventListener('click', () => this.togglePause());
+        this.resumeBtn.addEventListener('click', () => this.togglePause()); // Resume 버튼 연결
         this.muteBtn.addEventListener('click', () => this.toggleMute());
 
         this.showLeaderboardBtn.addEventListener('click', () => this.showLeaderboard());
         this.leaderboardCloseBtn.addEventListener('click', () => {
             this.leaderboardScreen.classList.add('hidden');
-            this.gameOverScreen.classList.remove('hidden');
+            // 게임 오버 상태라면 게임 오버 화면을 다시 보여줌
+            if (this.isGameOver && !this.isGameStarted) {
+                // 시작 화면에서 랭킹 본 경우 (처리 필요)
+            } else if (this.isGameOver) {
+                this.gameOverScreen.classList.remove('hidden');
+            }
         });
         this.submitScoreBtn.addEventListener('click', () => this.submitScore());
 
@@ -304,15 +345,43 @@ export class GameManager {
 
     updateScoreUI() {
         this.scoreElement.innerText = Math.floor(this.score);
+        if (this.distanceElement) {
+            this.distanceElement.innerText = Math.floor(this.distance);
+        }
     }
 
     async gameOver() {
         this.isGameOver = true;
         this.gameOverScreen.classList.remove('hidden');
         const finalScore = Math.floor(this.score);
+        const finalDistance = Math.floor(this.distance);
         this.finalScoreElement.innerText = finalScore;
         this.audioManager.stopBgm();
         this.audioManager.playGameOverSound();
+
+        // 세션 종료 및 기록 업데이트
+        if (this.sessionId) {
+            await this.firebaseManager.endSession(this.sessionId, finalScore, finalDistance);
+        }
+
+        // 상위 % 계산 및 표시
+        if (this.percentileContainer && finalScore > 0) {
+            this.percentileContainer.classList.remove('hidden');
+            this.percentileValue.innerText = "--";
+            this.percentileMarker.style.left = "0%";
+
+            // 비동기로 계산
+            this.firebaseManager.calculatePercentile(finalScore).then(percentile => {
+                if (percentile) {
+                    this.percentileValue.innerText = percentile;
+                    // 상위 1% -> left: 0%, 상위 99% -> left: 100%
+                    // percentile은 0.1 ~ 100 사이 값
+                    // UI상 왼쪽이 상위권(0%)이므로, left 값은 (percentile)% 가 적절함
+                    // 예: 상위 10% -> 왼쪽에서 10% 지점
+                    this.percentileMarker.style.left = `${percentile}%`;
+                }
+            });
+        }
 
         const isTopTen = await this.firebaseManager.isTopTen(finalScore);
         if (isTopTen) {
@@ -320,9 +389,9 @@ export class GameManager {
                 this.gameOverScreen.classList.add('hidden');
                 this.nameInputModal.classList.remove('hidden');
                 this.playerNameInput.focus();
-            }, 500);
+            }, 1500); // 퍼센티지 볼 시간 조금 더 줌
         } else {
-            this.firebaseManager.saveScore('Anonymous', finalScore);
+            // 랭킹권이 아니면 그냥 둠 (이미 endSession에서 기록됨)
         }
     }
 
@@ -337,11 +406,11 @@ export class GameManager {
             return;
         }
 
-        const score = Math.floor(this.score);
         this.submitScoreBtn.disabled = true;
         this.submitScoreBtn.innerText = "저장 중...";
 
-        const success = await this.firebaseManager.saveScore(name, score);
+        // 이미 생성된 세션에 이름만 업데이트
+        const success = await this.firebaseManager.updatePlayerName(this.sessionId, name);
 
         if (success) {
             this.nameInputModal.classList.add('hidden');

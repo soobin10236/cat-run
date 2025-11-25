@@ -37,13 +37,15 @@ canvas {
     pointer-events: none;
 }
 
-#score {
+#score-board {
     position: absolute;
     top: 20px;
     left: 20px;
     font-size: 24px;
     font-weight: bold;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    text-align: left;
+    line-height: 1.4;
 }
 
 .ui-screen {
@@ -194,7 +196,7 @@ button:active {
     position: absolute;
     bottom: 5vmin;
     /* 터치 영역 확장 */
-    width: clamp(140px, 40vmin, 220px); 
+    width: clamp(140px, 40vmin, 220px);
     height: clamp(140px, 40vmin, 220px);
 
     /* background와 border를 제거하고 box-shadow로 시각적인 링만 만듭니다. */
@@ -228,21 +230,22 @@ button:active {
 #jump-btn:active,
 #slide-btn:active {
     /* 배경색을 누르기 전과 동일하게 완전 투명으로 유지 */
-    background: transparent !important; 
-    
+    background: transparent !important;
+
     /* 링 색상도 원래의 흰색/저투명도로 유지 */
     box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2) !important;
-    
+
     /* 폰트 굵기 변화도 제거 */
-    font-weight: normal !important; 
+    font-weight: normal !important;
 }
 
 /* 3. 잔류 포커스 상태 (:focus) - 이 상태가 엉뚱한 버튼에 남아 초록색으로 변하는 것을 막습니다. */
 #jump-btn:focus,
 #slide-btn:focus {
-    background: transparent !important; 
+    background: transparent !important;
     box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2) !important;
-    outline: none !important; /* 브라우저 기본 포커스 테두리 제거 */
+    outline: none !important;
+    /* 브라우저 기본 포커스 테두리 제거 */
 }
 
 .mobile-btn:active .btn-icon,
@@ -311,7 +314,7 @@ button:active {
         border-radius: 0;
     }
 
-    #score {
+    #score-board {
         font-size: 20px;
         top: 10px;
         left: 10px;
@@ -341,7 +344,7 @@ button:active {
     }
 }
 
-/* 리더보드 스타일 */
+/* 리더보드 스타일 - 최초 버전 복원 (이미지 참고) */
 .leaderboard-container {
     background: rgba(0, 0, 0, 0.6);
     padding: 20px;
@@ -374,22 +377,21 @@ button:active {
 
 #leaderboard-table tr:nth-child(1) td {
     color: #f1c40f;
+    /* 1등 금색 */
     font-weight: bold;
 }
 
-/* 1등 금색 */
 #leaderboard-table tr:nth-child(2) td {
     color: #bdc3c7;
+    /* 2등 은색 */
     font-weight: bold;
 }
 
-/* 2등 은색 */
 #leaderboard-table tr:nth-child(3) td {
     color: #cd7f32;
+    /* 3등 동색 */
     font-weight: bold;
 }
-
-/* 3등 동색 */
 
 .secondary-btn {
     background-color: #3498db;
@@ -473,4 +475,345 @@ button:active {
     color: rgba(255, 255, 255, 0.5);
     pointer-events: none;
     z-index: 999;
+}
+
+/* Patch Notes Modal - 이미지 스타일 복원 */
+.patch-notes-content {
+    width: 90%;
+    max-width: 500px;
+    max-height: 85%;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    text-align: left;
+    background-color: white;
+    /* 흰색 배경 */
+    color: #333;
+    /* 검은 글씨 */
+}
+
+.patch-notes-content h2 {
+    font-size: 1.5rem;
+    margin: 0 0 15px 0;
+    color: #f39c12;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.patch-list {
+    margin: 10px 0;
+    overflow-y: auto;
+    background: #f5f5f5;
+    /* 아주 연한 회색 배경 */
+    padding: 15px;
+    border-radius: 8px;
+    flex: 1;
+    min-height: 0;
+}
+
+.patch-list h3 {
+    color: #d35400;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.patch-list ul {
+    list-style-type: disc;
+    padding-left: 20px;
+    margin-bottom: 15px;
+}
+
+.patch-list li {
+    margin-bottom: 6px;
+    line-height: 1.4;
+    font-size: 0.95rem;
+    color: #555;
+}
+
+.patch-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+    flex-shrink: 0;
+}
+
+.patch-footer label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #7f8c8d;
+}
+
+/* Button Group for Start Screen */
+.button-group {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+/* Resume Button in Pause Overlay */
+
+#leaderboard-table th {
+    background-color: rgba(46, 204, 113, 0.5);
+    color: white;
+}
+
+#leaderboard-table tr:nth-child(1) td {
+    color: #f1c40f;
+    /* 1등 금색 */
+    font-weight: bold;
+}
+
+#leaderboard-table tr:nth-child(2) td {
+    color: #bdc3c7;
+    /* 2등 은색 */
+    font-weight: bold;
+}
+
+#leaderboard-table tr:nth-child(3) td {
+    color: #cd7f32;
+    /* 3등 동색 */
+    font-weight: bold;
+}
+
+.secondary-btn {
+    background-color: #3498db;
+}
+
+.secondary-btn:hover {
+    background-color: #2980b9;
+}
+
+/* 이름 입력 모달 (카드 스타일) */
+.modal-content {
+    background-color: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    width: 90%;
+    max-width: 400px;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-content h1 {
+    font-size: 32px;
+    color: #f39c12;
+    margin-bottom: 10px;
+    text-shadow: none;
+}
+
+.modal-content p {
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 25px;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+#player-name-input {
+    padding: 12px;
+    font-size: 16px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    width: 60%;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+#player-name-input:focus {
+    border-color: #2ecc71;
+}
+
+#submit-score-btn {
+    padding: 12px 20px;
+    font-size: 16px;
+    border-radius: 8px;
+    width: auto;
+    white-space: nowrap;
+}
+
+/* 버전 정보 스타일 */
+#game-version {
+    position: absolute;
+    bottom: 5px;
+    right: 10px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    pointer-events: none;
+    z-index: 999;
+}
+
+/* Patch Notes Modal - 이미지 스타일 복원 */
+.patch-notes-content {
+    width: 90%;
+    max-width: 500px;
+    max-height: 85%;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    text-align: left;
+    background-color: white;
+    /* 흰색 배경 */
+    color: #333;
+    /* 검은 글씨 */
+}
+
+.patch-notes-content h2 {
+    font-size: 1.5rem;
+    margin: 0 0 15px 0;
+    color: #f39c12;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.patch-list {
+    margin: 10px 0;
+    overflow-y: auto;
+    background: #f5f5f5;
+    /* 아주 연한 회색 배경 */
+    padding: 15px;
+    border-radius: 8px;
+    flex: 1;
+    min-height: 0;
+}
+
+.patch-list h3 {
+    color: #d35400;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.patch-list ul {
+    list-style-type: disc;
+    padding-left: 20px;
+    margin-bottom: 15px;
+}
+
+.patch-list li {
+    margin-bottom: 6px;
+    line-height: 1.4;
+    font-size: 0.95rem;
+    color: #555;
+}
+
+.patch-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+    flex-shrink: 0;
+}
+
+.patch-footer label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #7f8c8d;
+}
+
+/* Button Group for Start Screen */
+.button-group {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+/* Resume Button in Pause Overlay */
+#resume-btn {
+    margin-bottom: 15px;
+    background-color: #2ecc71;
+}
+
+#resume-btn:hover {
+    background-color: #27ae60;
+}
+
+/* 상위 % 표시 스타일 */
+.percentile-container {
+    margin: 15px 0;
+    text-align: center;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.percentile-text {
+    font-size: 20px !important;
+    color: #f1c40f;
+    margin-bottom: 5px !important;
+    font-weight: bold;
+}
+
+.percentile-bar-box {
+    position: relative;
+    width: 80%;
+    max-width: 300px;
+    height: 20px;
+    background: #333;
+    border-radius: 10px;
+    margin-top: 5px;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.percentile-bar-bg {
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    /* 상위 0%(왼쪽) -> 하위 100%(오른쪽) 그라데이션 */
+    background: linear-gradient(to right, #f1c40f 0%, #2ecc71 25%, #3498db 50%, #95a5a6 100%);
+}
+
+.percentile-marker {
+    position: absolute;
+    top: -22px;
+    left: 0%;
+    /* JS로 설정 */
+    transform: translateX(-50%);
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 0 2px 2px rgba(0, 0, 0, 0.8);
+    transition: left 1s cubic-bezier(0.22, 1, 0.36, 1);
+    /* 부드러운 이동 */
 }
