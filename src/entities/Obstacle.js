@@ -59,6 +59,8 @@ export class Obstacle {
                 // 점프로도 피할 수 있는 높이
                 this.y = this.game.height - 50 - 70 - this.height;
             }
+            this.initialY = this.y; // 기준 높이 저장
+            this.angle = Math.random() * Math.PI * 2; // 랜덤 시작 위상
         }
     }
 
@@ -84,6 +86,14 @@ export class Obstacle {
                 this.frameTimer = 0;
             } else {
                 this.frameTimer += deltaTime;
+            }
+            // [NEW] 드론 상하 움직임 (점수 5000점 이상)
+            if (this.game.score >= 5000 && this.game.score < 10000) {
+                this.angle += 0.02 * speedFactor; // 0.1 -> 0.02로 속도 대폭 감소
+                this.y = this.initialY + Math.sin(this.angle) * 20; // 위아래로 50px 움직임
+            } else if (this.game.score >= 10000) {
+                this.angle += 0.01 * speedFactor; // 0.1 -> 0.02로 속도 대폭 감소
+                this.y = this.initialY + Math.sin(this.angle) * 30; // 위아래로 50px 움직임
             }
 
             // [NEW] 드론 공격 로직 (점수 5000점 이상일 때)
