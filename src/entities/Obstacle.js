@@ -92,7 +92,7 @@ export class Obstacle {
                 this.angle += 0.02 * speedFactor; // 0.1 -> 0.02로 속도 대폭 감소
                 this.y = this.initialY + Math.sin(this.angle) * 20; // 위아래로 50px 움직임
             } else if (this.game.score >= 10000) {
-                this.angle += 0.01 * speedFactor; // 0.1 -> 0.02로 속도 대폭 감소
+                this.angle += 0.04 * speedFactor; // 0.1 -> 0.02로 속도 대폭 감소
                 this.y = this.initialY + Math.sin(this.angle) * 30; // 위아래로 50px 움직임
             }
 
