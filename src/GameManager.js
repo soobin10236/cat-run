@@ -188,7 +188,7 @@ export class GameManager {
         this.items = this.items.filter(item => !item.markedForDeletion);
 
         // 점수 증가
-        this.score += (this.gameSpeed * deltaTime) * 100;
+        this.score += (this.gameSpeed * deltaTime) * 0.01;
 
         // 거리 증가 (게임 속도 * 시간)
         this.distance += (this.gameSpeed * deltaTime) * 0.001;
