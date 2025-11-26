@@ -4,12 +4,17 @@
  */
 import { ASSETS } from '../constants/Assets.js';
 import { Projectile } from './Projectile.js';
+import { DIFFICULTY_SETTINGS, DEBUG_MODE } from '../constants/GameConfig.js';
+import { OBSTACLE_CONFIG } from '../constants/ObstacleConfig.js';
 
 export class Obstacle {
     constructor(game) {
         this.game = game;
-        this.width = 50;
-        this.height = 50;
+
+        // 기본 크기 계산 (나중에 타입에 따라 덮어씌워짐)
+        this.width = this.game.height * OBSTACLE_CONFIG.GROUND.WIDTH_RATIO;
+        this.height = this.game.height * OBSTACLE_CONFIG.GROUND.HEIGHT_RATIO;
+
         this.x = this.game.width; // 화면 오른쪽 끝에서 시작
         this.markedForDeletion = false; // 화면 밖으로 나가면 true
 
@@ -26,38 +31,44 @@ export class Obstacle {
         // 총알 발사 여부 (드론 전용)
         this.hasFired = false;
 
+        // 공통 바닥 여백 계산
+        const groundOffset = this.game.height * OBSTACLE_CONFIG.GROUND_OFFSET_RATIO;
+
         // 장애물 타입 결정
-        // 70% 확률로 지상 장애물, 30% 확률로 공중 장애물
-        const isGround = Math.random() < 0.7;
+        const { PROBABILITY } = DIFFICULTY_SETTINGS.OBSTACLE;
+
+        // 지상 장애물 확률
+        const isGround = Math.random() < PROBABILITY.GROUND;
 
         if (isGround) {
-            // [지상 장애물] - 뒷골목 테마
-            this.y = this.game.height - this.height - 50;
+            // [지상 장애물]
+            this.y = this.game.height - this.height - groundOffset;
 
-            // 30% 확률로 '긴 장애물' (쓰레기통) 생성 (롱 점프 필요)
-            if (Math.random() < 0.3) {
-                this.width = 100; // 쓰레기통 너비 수정
+            // '긴 장애물' (쓰레기통) 생성
+            if (Math.random() < PROBABILITY.GROUND_LONG) {
+                this.width = this.game.height * OBSTACLE_CONFIG.GROUND.LONG_WIDTH_RATIO;
                 this.image.src = ASSETS.IMAGES.OBSTACLE_GROUND_LONG;
             } else {
-                this.width = 100; // 일반 너비 수정 (120 -> 100)
                 this.image.src = ASSETS.IMAGES.OBSTACLE_GROUND;
             }
         } else {
-            // [공중 장애물] - 드론 (스프라이트 애니메이션)
+            // [공중 장애물] - 드론
             this.image.src = ASSETS.IMAGES.OBSTACLE_AIR;
             this.isAnimated = true;
-            this.maxFrame = 3; // 1x4 스프라이트 (0~3)
-            this.width = 80; // 드론 크기 키움 (60 -> 80)
-            this.height = 60;
+            this.maxFrame = 3;
 
-            // 40% 확률로 '낮은 공중 장애물' (숙여야만 지나갈 수 있음)
-            if (Math.random() < 0.4) {
-                // 플레이어 키(50)보다 약간 낮게 배치 -> 슬라이딩(높이 35) 필요
-                // 바닥(50) + 장애물(60) + 여유공간(약간)
-                this.y = this.game.height - 50 - 30 - this.height;
+            this.width = this.game.height * OBSTACLE_CONFIG.AIR.WIDTH_RATIO;
+            this.height = this.game.height * OBSTACLE_CONFIG.AIR.HEIGHT_RATIO;
+
+            // '낮은 공중 장애물'
+            if (Math.random() < PROBABILITY.AIR_LOW) {
+                // 바닥 + 장애물 + 낮은 갭
+                const gap = this.game.height * OBSTACLE_CONFIG.AIR.LOW_GAP_RATIO;
+                this.y = this.game.height - groundOffset - gap - this.height;
             } else {
-                // 점프로도 피할 수 있는 높이
-                this.y = this.game.height - 50 - 70 - this.height;
+                // 바닥 + 장애물 + 높은 갭
+                const gap = this.game.height * OBSTACLE_CONFIG.AIR.HIGH_GAP_RATIO;
+                this.y = this.game.height - groundOffset - gap - this.height;
             }
             this.initialY = this.y; // 기준 높이 저장
             this.angle = Math.random() * Math.PI * 2; // 랜덤 시작 위상
@@ -87,17 +98,22 @@ export class Obstacle {
             } else {
                 this.frameTimer += deltaTime;
             }
-            // [NEW] 드론 상하 움직임 (점수 5000점 이상)
-            if (this.game.score >= 5000 && this.game.score < 10000) {
-                this.angle += 0.02 * speedFactor; // 0.1 -> 0.02로 속도 대폭 감소
-                this.y = this.initialY + Math.sin(this.angle) * 20; // 위아래로 50px 움직임
-            } else if (this.game.score >= 10000) {
-                this.angle += 0.04 * speedFactor; // 0.1 -> 0.02로 속도 대폭 감소
-                this.y = this.initialY + Math.sin(this.angle) * 30; // 위아래로 50px 움직임
+
+            const { THRESHOLDS } = DIFFICULTY_SETTINGS.OBSTACLE;
+
+            // [NEW] 드론 상하 움직임 (점수 기준)
+            if (this.game.score >= THRESHOLDS.DRONE_MOVE_LEVEL_1 && this.game.score < THRESHOLDS.DRONE_MOVE_LEVEL_2) {
+                this.angle += 0.02 * speedFactor;
+                const amplitude = this.game.height * OBSTACLE_CONFIG.DRONE_AMPLITUDE.LEVEL_1_RATIO;
+                this.y = this.initialY + Math.sin(this.angle) * amplitude;
+            } else if (this.game.score >= THRESHOLDS.DRONE_MOVE_LEVEL_2) {
+                this.angle += 0.04 * speedFactor;
+                const amplitude = this.game.height * OBSTACLE_CONFIG.DRONE_AMPLITUDE.LEVEL_2_RATIO;
+                this.y = this.initialY + Math.sin(this.angle) * amplitude;
             }
 
-            // [NEW] 드론 공격 로직 (점수 5000점 이상일 때)
-            if (this.game.score >= 50000 && !this.hasFired) {
+            // [NEW] 드론 공격 로직
+            if (this.game.score >= THRESHOLDS.DRONE_ATTACK && !this.hasFired) {
                 // 화면에 완전히 들어왔을 때 (오른쪽 끝에서 100px 안쪽)
                 // 그리고 플레이어보다 오른쪽에 있을 때
                 if (this.x < this.game.width - 100 && this.x > this.game.player.x) {
@@ -150,8 +166,28 @@ export class Obstacle {
             ctx.fillRect(this.x, this.y, this.width, this.height);
         }
 
-        // 디버그: 히트박스 그리기 (주석 해제하여 확인 가능)
-        // ctx.strokeStyle = 'white';
-        // ctx.strokeRect(this.x, this.y, this.width, this.height);
+        // 디버그: 히트박스 그리기
+        if (DEBUG_MODE) {
+            ctx.strokeStyle = '#FF0000'; // 빨간색 (장애물)
+            ctx.lineWidth = 2;
+
+            let scaleX, scaleY;
+
+            // GameManager의 충돌 로직과 동일한 스케일 적용
+            if (this.isAnimated) {
+                scaleX = 0.6; // 기본값
+                scaleY = 0.4; // 드론은 납작하게
+            } else {
+                scaleX = 0.7; // 지상 장애물은 약간 좁게
+                scaleY = 0.6; // 높이도 약간 낮게
+            }
+
+            const hitWidth = this.width * scaleX;
+            const hitHeight = this.height * scaleY;
+            const hitX = this.x + (this.width - hitWidth) / 2;
+            const hitY = this.y + (this.height - hitHeight) / 2;
+
+            ctx.strokeRect(hitX, hitY, hitWidth, hitHeight);
+        }
     }
 }

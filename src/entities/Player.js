@@ -2,22 +2,29 @@
  * 플레이어 클래스 (Player)
  * 플레이어 캐릭터(고양이)의 상태, 움직임, 렌더링 및 애니메이션을 담당합니다.
  */
-const GROUND_OFFSET = 45; // 바닥 높이 보정값 (변경이 쉽도록 상수로 관리)
-
 import { ASSETS } from '../constants/Assets.js';
+import { PLAYER_CONFIG } from '../constants/PlayerConfig.js';
+import { DEBUG_MODE } from '../constants/GameConfig.js';
 
 export class Player {
     constructor(game) {
         this.game = game;
-        this.width = 80; // 화면에 표시될 너비 (50 -> 80으로 증가)
-        this.height = 80; // 화면에 표시될 높이
-        this.originalHeight = 80; // 그리기용 원래 높이 (찌그러짐 방지)
-        this.x = 200; // 화면 왼쪽에서 25% 위치 (800px 기준)
-        this.y = this.game.height - this.height - GROUND_OFFSET; // 초기 바닥 위치
 
-        this.vy = 0; // 수직 속도
-        this.weight = 0.5; // 중력
-        this.jumpPower = 12; // 점프 힘 (15 -> 12로 감소)
+        // 반응형 크기 및 위치 계산
+        this.width = this.game.height * PLAYER_CONFIG.SIZE_RATIO;
+        this.height = this.width; // 정사각형 비율 유지
+        this.originalHeight = this.height;
+
+        this.x = this.game.width * PLAYER_CONFIG.X_POSITION_RATIO;
+
+        // 바닥 위치 계산 (화면 높이 - 플레이어 키 - 바닥 여백)
+        this.groundOffset = this.game.height * PLAYER_CONFIG.GROUND_OFFSET_RATIO;
+        this.y = this.game.height - this.height - this.groundOffset;
+
+        // 물리 엔진 상수 (화면 높이 비례)
+        this.vy = 0;
+        this.weight = this.game.height * PLAYER_CONFIG.GRAVITY_RATIO;
+        this.jumpPower = this.game.height * PLAYER_CONFIG.JUMP_POWER_RATIO;
 
         // 스프라이트 이미지 설정
         this.image = new Image();
@@ -108,13 +115,15 @@ export class Player {
         // 물리 엔진 (수직 이동)
         this.y += this.vy * speedFactor;
 
-        // 점프 시 약간 앞으로 이동 (25% 위치 기준)
+        // 점프 시 약간 앞으로 이동 (원래 위치 + 여유분)
         if (this.currentState === this.states.JUMP) {
-            if (this.x < 250) { // 200 + 50
+            const jumpForwardLimit = this.game.width * PLAYER_CONFIG.X_POSITION_RATIO + 50;
+            if (this.x < jumpForwardLimit) {
                 this.x += 0.5 * speedFactor;
             }
         } else {
-            if (this.x > 200) { // 원래 위치로 복귀
+            const originalX = this.game.width * PLAYER_CONFIG.X_POSITION_RATIO;
+            if (this.x > originalX) { // 원래 위치로 복귀
                 this.x -= 2 * speedFactor;
             }
         }
@@ -124,16 +133,16 @@ export class Player {
         } else {
             this.vy = 0;
             if (this.currentState !== this.states.JUMP) {
-                this.y = this.game.height - this.height - GROUND_OFFSET;
+                this.y = this.game.height - this.height - this.groundOffset;
             }
         }
 
         // 슬라이딩 시 히트박스 조정
         if (this.currentState === this.states.SLIDE) {
-            this.height = 56; // 높이 70%로 조정 (80 * 0.7 = 56)
-            this.y = this.game.height - this.height - GROUND_OFFSET;
+            this.height = this.width * 0.7; // 높이 70%로 조정
+            this.y = this.game.height - this.height - this.groundOffset;
         } else {
-            this.height = 80; // 원래 높이 복구
+            this.height = this.width; // 원래 높이 복구 (정사각형)
         }
 
         // 애니메이션 프레임 업데이트 (점프 상태가 아닐 때만 타이머 기반)
@@ -151,20 +160,6 @@ export class Player {
     }
 
     draw(ctx) {
-        // 디버깅용 로그 (1초에 한 번 정도만 출력)
-        // if (this.game.score % 1 < 0.02) {
-        //     console.log('Player Draw Debug:', {
-        //         complete: this.image.complete,
-        //         naturalWidth: this.image.naturalWidth,
-        //         naturalHeight: this.image.naturalHeight,
-        //         x: this.x,
-        //         y: this.y,
-        //         frame: this.frame,
-        //         spriteWidth: this.spriteWidth,
-        //         spriteHeight: this.spriteHeight
-        //     });
-        // }
-
         if (this.image.complete && this.image.naturalWidth > 0) {
             // 이미지 크기에 맞춰 스프라이트 프레임 크기 동적 계산 (4x4 그리드)
             this.spriteWidth = this.image.naturalWidth / 4;
@@ -194,21 +189,31 @@ export class Player {
             ctx.fillRect(this.x, this.y, this.width, this.height);
         }
 
-        // 디버그: 히트박스
-        // ctx.strokeStyle = 'black';
-        // ctx.strokeRect(this.x, this.y, this.width, this.height);
+        // 디버그: 히트박스 그리기
+        if (DEBUG_MODE) {
+            ctx.strokeStyle = '#00FF00'; // 초록색 (플레이어)
+            ctx.lineWidth = 2;
+
+            // GameManager의 충돌 로직과 동일한 계산 (50% 크기)
+            const hitWidth = this.width * 0.5;
+            const hitHeight = this.height * 0.5;
+            const hitX = this.x + (this.width - hitWidth) / 2;
+            const hitY = this.y + (this.height - hitHeight) / 2;
+
+            ctx.strokeRect(hitX, hitY, hitWidth, hitHeight);
+        }
     }
 
     /**
      * 플레이어가 바닥에 있는지 확인
      */
     onGround() {
-        return this.y >= this.game.height - this.height - GROUND_OFFSET;
+        return this.y >= this.game.height - this.height - this.groundOffset;
     }
 
     checkCollision() {
-        if (this.y > this.game.height - this.height - GROUND_OFFSET) {
-            this.y = this.game.height - this.height - GROUND_OFFSET;
+        if (this.y > this.game.height - this.height - this.groundOffset) {
+            this.y = this.game.height - this.height - this.groundOffset;
         }
     }
 }

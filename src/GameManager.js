@@ -7,6 +7,8 @@ import { AudioManager } from './utils/AudioManager.js';
 import { FirebaseManager } from './utils/FirebaseManager.js';
 import { Projectile } from './entities/Projectile.js';
 import { GAME_VERSION } from './constants/Version.js';
+import { DIFFICULTY_SETTINGS, SPEED_ACCELERATION, DEBUG_MODE } from './constants/GameConfig.js';
+import { ITEM_CONFIG } from './constants/ItemConfig.js';
 
 /**
  * 게임 매니저 클래스 (GameManager)
@@ -29,8 +31,7 @@ export class GameManager {
         }
 
         // 게임 속도 설정
-        this.MAX_GAME_SPEED = 5.5; // 최대 게임 속도 변경(4.5=>5.5) (눈의 피로 방지)
-        this.gameSpeed = 3; // 초기 게임 속도
+        this.gameSpeed = DIFFICULTY_SETTINGS.GAME_SPEED.INITIAL;
 
         this.audioManager = new AudioManager(); // 오디오 매니저 인스턴스
         this.input = new InputHandler(); // 입력 처리기
@@ -50,7 +51,7 @@ export class GameManager {
         this.items = []; // 아이템 배열
         this.projectiles = []; // 총알 배열
         this.obstacleTimer = 0;
-        this.obstacleInterval = 2000; // 장애물 생성 간격 (ms)
+        this.obstacleInterval = 2000; // 초기값 (update에서 재계산됨)
         this.itemTimer = 0;
         this.itemInterval = 1000; // 아이템 생성 체크 간격 (ms)
 
@@ -87,6 +88,7 @@ export class GameManager {
         this.isGameStarted = false;
         this.isPaused = false;
         this.distance = 0; // 달린 거리
+        this.playTime = 0; // 플레이 시간 (ms)
         this.sessionId = null; // 현재 게임 세션 ID
         this.userId = localStorage.getItem('userId');
 
@@ -109,6 +111,8 @@ export class GameManager {
 
         // 게임이 시작되지 않았거나 게임 오버 상태이거나 일시정지 상태면 업데이트 중지
         if (!this.isGameStarted || this.isGameOver || this.isPaused) return;
+
+        this.playTime += deltaTime;
 
         // 엔티티 업데이트
         this.background.update(deltaTime);
@@ -136,12 +140,15 @@ export class GameManager {
             this.obstacleTimer = 0;
 
             // 다음 장애물 생성 간격 계산
-            const speedReduction = this.gameSpeed * 250;
-            // 난이도 조절: 점수 반영 비율을 0.1 -> 0.05로 낮춰서 난이도 상승 속도 완화
-            const scoreReduction = this.score * 0.05;
-            const baseInterval = 2300 - speedReduction - scoreReduction;
-            const safeInterval = Math.max(baseInterval, 600);
-            this.obstacleInterval = safeInterval + Math.random() * 700;
+            const { BASE_INTERVAL, MIN_INTERVAL, SPEED_COEFFICIENT, SCORE_COEFFICIENT, RANDOM_DELAY } = DIFFICULTY_SETTINGS.OBSTACLE;
+
+            const speedReduction = this.gameSpeed * SPEED_COEFFICIENT;
+            const scoreReduction = this.score * SCORE_COEFFICIENT;
+
+            const baseInterval = BASE_INTERVAL - speedReduction - scoreReduction;
+            const safeInterval = Math.max(baseInterval, MIN_INTERVAL);
+
+            this.obstacleInterval = safeInterval + Math.random() * RANDOM_DELAY;
         } else {
             this.obstacleTimer += deltaTime;
         }
@@ -155,16 +162,26 @@ export class GameManager {
         this.obstacles = this.obstacles.filter(obstacle => !obstacle.markedForDeletion);
 
         // 아이템 처리
-        if (this.itemTimer > 200) {
-            if (Math.random() < 0.2) {
+        if (this.itemTimer > this.itemInterval) {
+            // 생성 주기 도달
+            if (Math.random() < ITEM_CONFIG.SPAWN_CHANCE) {
                 const lastObstacle = this.obstacles.length > 0 ? this.obstacles[this.obstacles.length - 1] : null;
-                const safeDistance = 150;
+                const lastItem = this.items.length > 0 ? this.items[this.items.length - 1] : null;
+
+                const safeDistance = this.width * ITEM_CONFIG.SAFE_DISTANCE_RATIO;
                 let canSpawn = true;
 
+                // 마지막 장애물과의 거리 체크
                 if (lastObstacle && lastObstacle.x > this.width - safeDistance) {
                     canSpawn = false;
                 }
-                if (this.obstacleInterval - this.obstacleTimer < 300) {
+                // 마지막 아이템과의 거리 체크 (연속 뭉침 방지)
+                if (lastItem && lastItem.x > this.width - safeDistance) {
+                    canSpawn = false;
+                }
+
+                // 장애물 생성 예정 시간과 너무 가까우면 생성 금지 (겹침 방지)
+                if (this.obstacleInterval - this.obstacleTimer < 300) { // 0.3초 이내 장애물 생성 예정이면 스킵
                     canSpawn = false;
                 }
 
@@ -172,7 +189,10 @@ export class GameManager {
                     this.items.push(new Item(this));
                 }
             }
+
+            // 다음 생성 시간 랜덤 설정
             this.itemTimer = 0;
+            this.itemInterval = Math.random() * (ITEM_CONFIG.SPAWN_INTERVAL_MAX - ITEM_CONFIG.SPAWN_INTERVAL_MIN) + ITEM_CONFIG.SPAWN_INTERVAL_MIN;
         } else {
             this.itemTimer += deltaTime;
         }
@@ -189,16 +209,21 @@ export class GameManager {
 
         // 점수 증가
         this.score += (this.gameSpeed * deltaTime) * 0.01;
-
         // 거리 증가 (게임 속도 * 시간)
         this.distance += (this.gameSpeed * deltaTime) * 0.001;
 
         this.updateScoreUI();
 
-        // 게임 속도 점진적 증가
-        if (this.gameSpeed < this.MAX_GAME_SPEED) {
-            this.gameSpeed += 0.001;
-        }
+        // 게임 속도 계산 (비선형 Ease-out 방식)
+        // 초반에 빠르게 증가하고 후반에 완만하게 증가
+        const timeElapsedSeconds = this.playTime / 1000;
+        const progress = Math.min(timeElapsedSeconds / DIFFICULTY_SETTINGS.GAME_SPEED.TARGET_TIME_SECONDS, 1.0);
+
+        // Ease-out Quad 공식: t * (2 - t)
+        const easeOutProgress = progress * (2 - progress);
+
+        const speedDiff = DIFFICULTY_SETTINGS.GAME_SPEED.MAX - DIFFICULTY_SETTINGS.GAME_SPEED.INITIAL;
+        this.gameSpeed = DIFFICULTY_SETTINGS.GAME_SPEED.INITIAL + (speedDiff * easeOutProgress);
     }
 
     /**
@@ -212,6 +237,36 @@ export class GameManager {
         this.obstacles.forEach(obstacle => obstacle.draw(this.ctx));
         this.items.forEach(item => item.draw(this.ctx));
         this.projectiles.forEach(projectile => projectile.draw(this.ctx));
+
+        if (DEBUG_MODE) {
+            this.drawDebugInfo();
+        }
+    }
+
+    drawDebugInfo() {
+        this.ctx.fillStyle = 'black';
+        this.ctx.font = 'bold 16px monospace';
+        this.ctx.textAlign = 'left';
+        this.ctx.textBaseline = 'top';
+
+        const x = 10;
+        let y = 60; // 점수 표시 아래쪽
+
+        const info = [
+            `Time: ${(this.playTime / 1000).toFixed(1)}s`,
+            `Speed: ${this.gameSpeed.toFixed(2)} / ${DIFFICULTY_SETTINGS.GAME_SPEED.MAX}`,
+            `Interval: ${Math.floor(this.obstacleInterval)}ms`,
+            `Score: ${Math.floor(this.score)}`
+        ];
+
+        info.forEach(text => {
+            // 가독성을 위해 흰색 테두리 추가
+            this.ctx.strokeStyle = 'white';
+            this.ctx.lineWidth = 3;
+            this.ctx.strokeText(text, x, y);
+            this.ctx.fillText(text, x, y);
+            y += 20;
+        });
     }
 
     /**
@@ -255,7 +310,8 @@ export class GameManager {
         this.isGameOver = false;
         this.score = 0;
         this.distance = 0;
-        this.gameSpeed = 3;
+        this.playTime = 0;
+        this.gameSpeed = DIFFICULTY_SETTINGS.GAME_SPEED.INITIAL;
         this.obstacles = [];
         this.items = [];
         this.projectiles = [];
