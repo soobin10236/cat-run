@@ -41,8 +41,11 @@ export class GameManager {
         this.firebaseManager = new FirebaseManager(); // Firebase 매니저
 
         // 실시간 버전 체크
+        // 실시간 버전 체크
+        this.isUpdateAlertShown = false;
         this.firebaseManager.listenForVersionChange((serverVersion) => {
-            if (serverVersion !== GAME_VERSION) {
+            if (!this.isUpdateAlertShown && serverVersion !== GAME_VERSION) {
+                this.isUpdateAlertShown = true;
                 alert(`새로운 버전(v${serverVersion})이 출시되었습니다! \n확인을 누르면 업데이트를 위해 새로고침합니다.`);
                 location.reload();
             }
@@ -83,6 +86,13 @@ export class GameManager {
         this.percentileContainer = document.getElementById('percentile-container');
         this.percentileValue = document.getElementById('percentile-value');
         this.percentileMarker = document.getElementById('percentile-marker');
+
+        // 피드백 관련 UI
+        this.feedbackBtn = document.getElementById('feedback-btn');
+        this.feedbackModal = document.getElementById('feedback-modal');
+        this.feedbackInput = document.getElementById('feedback-input');
+        this.sendFeedbackBtn = document.getElementById('send-feedback-btn');
+        this.closeFeedbackBtn = document.getElementById('close-feedback-btn');
 
         this.bindEvents();
 
@@ -152,7 +162,13 @@ export class GameManager {
             const scoreReduction = this.score * SCORE_COEFFICIENT;
 
             const baseInterval = BASE_INTERVAL - speedReduction - scoreReduction;
-            const safeInterval = Math.max(baseInterval, MIN_INTERVAL);
+
+            // 속도가 빨라질수록 최소 간격도 줄여서 난이도 유지 (거리 = 속도 * 시간)
+            // 속도가 2배 되면 최소 시간 간격은 절반이 되어야 거리가 유지됨 (제곱근 사용)
+            const speedRatio = this.gameSpeed / DIFFICULTY_SETTINGS.GAME_SPEED.INITIAL;
+            const dynamicMinInterval = MIN_INTERVAL / Math.sqrt(speedRatio);
+
+            const safeInterval = Math.max(baseInterval, dynamicMinInterval);
 
             this.obstacleInterval = safeInterval + Math.random() * RANDOM_DELAY;
         } else {
@@ -406,6 +422,42 @@ export class GameManager {
             }
         });
         this.submitScoreBtn.addEventListener('click', () => this.submitScore());
+
+        // 피드백 이벤트
+        this.feedbackBtn.addEventListener('click', () => {
+            this.togglePause(); // 게임 일시정지
+            this.feedbackModal.classList.remove('hidden');
+            this.feedbackInput.value = '';
+            this.feedbackInput.focus();
+        });
+
+        this.closeFeedbackBtn.addEventListener('click', () => {
+            this.feedbackModal.classList.add('hidden');
+            // 일시정지 해제는 사용자가 직접 하도록 둠 (실수로 닫았을 때 바로 게임 시작되면 당황하니까)
+        });
+
+        this.sendFeedbackBtn.addEventListener('click', async () => {
+            const message = this.feedbackInput.value.trim();
+            if (!message) {
+                alert("내용을 입력해주세요!");
+                return;
+            }
+
+            this.sendFeedbackBtn.disabled = true;
+            this.sendFeedbackBtn.innerText = "전송 중...";
+
+            const success = await this.firebaseManager.sendFeedback(message, this.userId);
+
+            if (success) {
+                alert("소중한 의견 감사합니다! 🙇‍♂️");
+                this.feedbackModal.classList.add('hidden');
+            } else {
+                alert("전송에 실패했습니다. 잠시 후 다시 시도해주세요.");
+            }
+
+            this.sendFeedbackBtn.disabled = false;
+            this.sendFeedbackBtn.innerText = "보내기";
+        });
 
         window.addEventListener('keydown', (e) => {
             if (this.isGameOver && e.key.toLowerCase() === 'r') {

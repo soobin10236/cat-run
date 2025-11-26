@@ -21,7 +21,7 @@ export const ITEM_CONFIG = {
     JUMP_HEIGHT_RATIO: 0.15,      // 공중 생성 시 바닥 기준 높이 (점프해서 닿을 높이)
     AIR_SPAWN_CHANCE: 0.5,        // 공중 생성 확률 (50%)
     FLOAT_AMPLITUDE_RATIO: 0.08, // 둥실둥실 움직임 폭 비율 (약 6px @ 800h)
-    FLOAT_SPEED: 0.1,             // 둥실둥실 움직임 속도
+    FLOAT_SPEED: 0.05,             // 둥실둥실 움직임 속도
 
     // 충돌 박스 크기 비율 (이미지 크기 대비)
     HITBOX_SCALE: 0.8,
@@ -34,7 +34,7 @@ export const ITEM_CONFIG = {
 
     // 아이템 생성 확률 (합이 1.0이 되도록)
     PROBABILITIES: {
-        SCORE: 0.8,
-        SHIELD: 0.2
+        SCORE: 0.9,
+        SHIELD: 0.1
     }
 };

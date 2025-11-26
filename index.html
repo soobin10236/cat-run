@@ -9,7 +9,18 @@
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-</head>
+    <!DOCTYPE html>
+    <html lang="ko">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <title>Cat Run Game</title>
+        <link rel="stylesheet" href="style.css">
+        <link rel="manifest" href="manifest.json">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    </head>
 
 <body>
     <div id="game-container">
@@ -22,10 +33,11 @@
                 <br>
                 거리: <span id="distance-value">0</span>m
             </div>
-            <div id="game-version">v1.3.0</div>
+            <div id="game-version">v1.4.0</div>
 
             <button id="pause-btn">⏸️</button>
             <button id="mute-btn">🔊</button>
+            <button id="feedback-btn">✉️</button>
         </div>
 
         <!-- Start Screen -->
@@ -102,29 +114,41 @@
             </div>
         </div>
 
+        <!-- Feedback Modal -->
+        <div id="feedback-modal" class="hidden ui-screen">
+            <div class="modal-content">
+                <h2>개발자에게 메시지 보내기</h2>
+                <p>버그 제보, 건의 사항 등 자유롭게 남겨주세요!</p>
+                <textarea id="feedback-input" placeholder="내용을 입력하세요..." rows="5" maxlength="500"></textarea>
+                <div class="button-group">
+                    <button id="send-feedback-btn">보내기</button>
+                    <button id="close-feedback-btn" class="secondary-btn">닫기</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Patch Notes Modal -->
         <div id="patch-notes-modal" class="hidden ui-screen">
             <div class="modal-content patch-notes-content">
-                <h2>📢 패치 노트 (v1.3.0)</h2>
+                <h2>📢 패치 노트 (v1.4.0)</h2>
                 <div class="patch-list">
                     <h3>🎈 개발자 노트</h3>
                     <ul>
-                        <li>플레이해주셔서 감사합니다!</li>
-                        <li>퇴근하고 오늘도 개선 중입니다..</li>
-                        <li>많은 의견 주시면 감사하겠습니다!</li>
-                        <li>슬라이드 모션 개선도 곧 할 예정입니다..😂</li>
+                        <li>드디어 슬라이드 모션을 고쳤습니다! 😭</li>
+                        <li>쉴드 아이템으로 더 오래 살아남아보세요!</li>
+                        <li>재밌게 즐겨주셔서 감사합니다.</li>
                     </ul>
                     <h3>✨ 새로운 기능</h3>
                     <ul>
-                        <li><strong>거리 측정:</strong> 달린 거리를 기록합니다!</li>
-                        <li><strong>모바일 개선:</strong> 터치 컨트롤 및 일시정지 메뉴 개선.</li>
-                        <li><strong>리더보드:</strong> 게임 시작 전 랭킹 확인 가능.</li>
-                        <li><strong>상위점수:</strong> 내 점수는 상위 몇퍼센트인지 확인 가능.</li>
+                        <li><strong>✉️ 메시지 보내기:</strong> 개발자에게 메시지를 보낼 수 있습니다.</li>
+                        <li><strong>🛡️ 쉴드 아이템:</strong> 최대 3개 중첩! 장애물을 막아줍니다.</li>
+                        <li><strong>✨ 일시 무적:</strong> 방어 후 잠시 동안 무적 상태가 됩니다.</li>
+                        <li><strong>⬇️ 급강하:</strong> 공중에서 아래 키로 빠르게 착지 가능!</li>
                     </ul>
                     <h3>🛠️ 개선 사항</h3>
                     <ul>
-                        <li><strong>난이도 조정:</strong> 더 부드러운 게임플레이를 위해 난이도 곡선 조정.</li>
-                        <li><strong>버그 수정:</strong> 일시정지 및 점수 관련 문제 수정.</li>
+                        <li><strong>⚖️ 밸런스 조정:</strong> 고속 구간 난이도 최적화 & 아이템 확률 조정.</li>
+                        <li><strong>💬 UI 효과:</strong> 아이템 획득/방어 시 텍스트 효과 추가.</li>
                     </ul>
                 </div>
                 <div class="patch-footer">
@@ -152,9 +176,8 @@
             <div class="rotate-icon">📱↻</div>
             <p>화면을 회전해주세요</p>
         </div>
-    </div>
 
-    <script type="module" src="src/main.js"></script>
+        <script type="module" src="src/main.js"></script>
 </body>
 
 </html>

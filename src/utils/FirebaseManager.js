@@ -178,6 +178,25 @@ export class FirebaseManager {
     }
 
     /**
+     * 개발자에게 피드백 보내기 (익명 + UID)
+     */
+    async sendFeedback(message, userId) {
+        try {
+            const feedbackRef = collection(this.db, "messages");
+            await addDoc(feedbackRef, {
+                userId: userId || 'anonymous',
+                message: message,
+                timestamp: serverTimestamp(),
+                date: new Date().toLocaleString()
+            });
+            return true;
+        } catch (e) {
+            console.error("Error sending feedback: ", e);
+            return false;
+        }
+    }
+
+    /**
      * 버전 변경 감지 리스너
      * @param {function} onVersionChange - 버전 변경 시 실행할 콜백 함수
      */

@@ -6,13 +6,13 @@
 export const DIFFICULTY_SETTINGS = {
     GAME_SPEED: {
         INITIAL: 4.0,
-        MAX: 10.0, // MAX 속도 도달 시점의 목표 속도
+        MAX: 9.0, // MAX 속도 도달 시점의 목표 속도
         TARGET_TIME_SECONDS: 90, // MAX 속도 도달 시간
     },
     OBSTACLE: {
         BASE_INTERVAL: 2300, // 기본 생성 간격 (ms)
-        MIN_INTERVAL: 600,   // 최소 생성 간격 (ms)
-        SPEED_COEFFICIENT: 250, // 속도 1 증가당 간격 감소량 (ms)
+        MIN_INTERVAL: 700,   // 최소 생성 간격 (ms) - 0.5초 마지노선 확보용
+        SPEED_COEFFICIENT: 200, // 속도 1 증가당 간격 감소량 (ms)
         SCORE_COEFFICIENT: 0.05, // 점수 1점당 간격 감소량 (ms)
         RANDOM_DELAY: 700,    // 추가 랜덤 지연 시간 (ms)
 
@@ -32,7 +32,7 @@ export const DIFFICULTY_SETTINGS = {
     }
 };
 
-export const DEBUG_MODE = true; // 디버그 모드 활성화 여부
+export const DEBUG_MODE = false; // 디버그 모드 활성화 여부
 
 // 초당 속도 증가량 계산
 export const SPEED_ACCELERATION =

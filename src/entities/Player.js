@@ -39,7 +39,7 @@ export class Player {
         this.animState = {
             RUN: { min: 0, max: 7 },
             JUMP: { min: 8, max: 11 },
-            SLIDE: { min: 12, max: 15 }
+            SLIDE: { min: 13, max: 14 } // 12(진입), 15(복귀) 제외하고 13, 14(완전 엎드림)만 반복
         };
         this.currentAnim = this.animState.RUN;
 
@@ -107,26 +107,37 @@ export class Player {
         } else if (this.currentState === this.states.JUMP) {
             this.currentAnim = this.animState.JUMP;
 
-            // 가변 점프
+            // 가변 점프 (키 떼면 점프력 감소)
             if (!input.keys.includes('ArrowUp') && !input.keys.includes(' ') && this.vy < 0) {
                 this.vy *= 0.5;
             }
 
-            // 점프 애니메이션: 속도에 따라 프레임 매핑 (자연스러운 체공 표현)
-            if (this.vy < -this.jumpPower / 2) {
-                this.frame = 8; // 상승 초기 (Launch)
-            } else if (this.vy < 0) {
-                this.frame = 9; // 상승 후기 (Air)
-            } else if (this.vy > 0 && this.vy < this.jumpPower / 2) {
-                this.frame = 10; // 하강 초기 (Peak/Down)
-            } else if (this.vy > this.jumpPower / 2) {
-                this.frame = 11; // 하강 후기 (Land)
+            // 급강하 (Fast Fall): 공중에서 아래 키 누르면 빨리 내려옴
+            if (input.keys.includes('ArrowDown')) {
+                this.vy += this.weight * 0.5; // 중력 가중
             }
 
-            // 바닥에 닿으면 런 상태로 복귀
+            // 점프 애니메이션: 속도에 따라 프레임 매핑
+            if (this.vy < -this.jumpPower / 2) {
+                this.frame = 8; // 상승 초기
+            } else if (this.vy < 0) {
+                this.frame = 9; // 상승 후기
+            } else if (this.vy > 0 && this.vy < this.jumpPower / 2) {
+                this.frame = 10; // 하강 초기
+            } else if (this.vy > this.jumpPower / 2) {
+                this.frame = 11; // 하강 후기
+            }
+
+            // 바닥에 닿으면 상태 전환
             if (this.onGround()) {
-                this.currentState = this.states.RUN;
-                this.frame = this.animState.RUN.min;
+                // 아래 키를 누르고 있으면 즉시 슬라이드로 전환 (씹힘 방지)
+                if (input.keys.includes('ArrowDown')) {
+                    this.currentState = this.states.SLIDE;
+                    this.frame = this.animState.SLIDE.min;
+                } else {
+                    this.currentState = this.states.RUN;
+                    this.frame = this.animState.RUN.min;
+                }
             }
         } else if (this.currentState === this.states.SLIDE) {
             this.currentAnim = this.animState.SLIDE;
