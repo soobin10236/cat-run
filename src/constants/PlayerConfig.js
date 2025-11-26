@@ -8,7 +8,7 @@ export const PLAYER_CONFIG = {
     SIZE_RATIO: 0.2,
 
     // 화면 너비 대비 X 위치 비율 (왼쪽에서 얼마나 떨어져 있는지)
-    X_POSITION_RATIO: 0.1,
+    X_POSITION_RATIO: 0.2,
 
     // 화면 높이 대비 바닥 여백 비율
     GROUND_OFFSET_RATIO: 0.16,

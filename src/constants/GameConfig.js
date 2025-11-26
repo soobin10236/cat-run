@@ -32,7 +32,7 @@ export const DIFFICULTY_SETTINGS = {
     }
 };
 
-export const DEBUG_MODE = false; // 디버그 모드 활성화 여부
+export const DEBUG_MODE = true; // 디버그 모드 활성화 여부
 
 // 초당 속도 증가량 계산
 export const SPEED_ACCELERATION =

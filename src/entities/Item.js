@@ -21,13 +21,14 @@ export class Item {
         // 타입별 이미지 및 효과 설정
         this.image = new Image();
         if (this.type === ITEM_CONFIG.TYPES.SCORE) {
-            this.image.src = ASSETS.IMAGES.ITEM_SCORE; // 현재는 캔(참치) 이미지 사용
+            this.image.src = ASSETS.IMAGES.ITEM_SCORE;
+        } else if (this.type === ITEM_CONFIG.TYPES.SHIELD) {
+            this.image.src = ASSETS.IMAGES.ITEM_SHIELD;
         }
 
-        // 높이 설정 (기본은 바닥에서 약간 뜬 위치, 나중에 패턴 다양화 가능)
-        // 현재는 점프해서 먹기 좋게 바닥보다 조금 더 높게 설정 (점프 유도)
+        // 높이 설정
         const groundOffset = this.game.height * ITEM_CONFIG.GROUND_OFFSET_RATIO;
-        const jumpHeight = this.game.height * ITEM_CONFIG.JUMP_HEIGHT_RATIO; // 점프해서 닿을 높이
+        const jumpHeight = this.game.height * ITEM_CONFIG.JUMP_HEIGHT_RATIO;
 
         // 둥실둥실 진폭 미리 계산
         this.floatAmplitude = this.game.height * ITEM_CONFIG.FLOAT_AMPLITUDE_RATIO;
@@ -65,7 +66,12 @@ export class Item {
         if (this.image.complete && this.image.naturalWidth > 0) {
             ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
         } else {
-            ctx.fillStyle = 'yellow';
+            // 이미지가 없으면 타입별 색상으로 대체
+            if (this.type === ITEM_CONFIG.TYPES.SHIELD) {
+                ctx.fillStyle = 'cyan';
+            } else {
+                ctx.fillStyle = 'yellow';
+            }
             ctx.beginPath();
             ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width / 2, 0, Math.PI * 2);
             ctx.fill();

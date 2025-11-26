@@ -8,7 +8,8 @@ export const ASSETS = {
         OBSTACLE_GROUND_LONG: 'src/assets/images/obstacle_ground_long.png',
         OBSTACLE_AIR: 'src/assets/images/obstacle_air.png',
         ITEM: 'src/assets/images/golden_fish.png',
-        ITEM_SCORE: 'src/assets/images/golden_fish.png',
+        ITEM_SCORE: 'src/assets/images/item_fish.png',
+        ITEM_SHIELD: 'src/assets/images/item_shield.png', // 이미지 추가 필요
         BACKGROUND: 'src/assets/images/background_sky.png' // 단일 배경으로 복구 (파일이 없으면 변경 필요)
     },
     AUDIO: {

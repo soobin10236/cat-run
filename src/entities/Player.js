@@ -55,6 +55,26 @@ export class Player {
             SLIDE: 2
         };
         this.currentState = this.states.RUN;
+
+        // 무적 상태 (쉴드 아이템)
+        this.shieldCount = 0; // 쉴드 개수 (최대 3)
+        this.maxShields = 3;
+        this.invincibleTimer = 0; // 충돌 후 일시적 무적 타이머
+    }
+
+    addShield() {
+        if (this.shieldCount < this.maxShields) {
+            this.shieldCount++;
+        }
+    }
+
+    hitShield() {
+        if (this.shieldCount > 0) {
+            this.shieldCount--;
+            this.invincibleTimer = 1000; // 1초간 일시 무적
+            return true; // 방어 성공
+        }
+        return false; // 방어 실패
     }
 
     update(input, deltaTime) {
@@ -62,6 +82,11 @@ export class Player {
         const speedFactor = deltaTime / 16.67;
 
         this.checkCollision();
+
+        // 일시 무적 타이머 업데이트
+        if (this.invincibleTimer > 0) {
+            this.invincibleTimer -= deltaTime;
+        }
 
         // 상태 관리 (State Management)
         if (this.currentState === this.states.RUN) {
@@ -160,6 +185,11 @@ export class Player {
     }
 
     draw(ctx) {
+        // 일시 무적 상태일 때 깜빡임 효과
+        if (this.invincibleTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) {
+            return; // 그리지 않음 (깜빡임)
+        }
+
         if (this.image.complete && this.image.naturalWidth > 0) {
             // 이미지 크기에 맞춰 스프라이트 프레임 크기 동적 계산 (4x4 그리드)
             this.spriteWidth = this.image.naturalWidth / 4;
@@ -187,6 +217,20 @@ export class Player {
             // 대체 도형
             ctx.fillStyle = 'orange';
             ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
+
+        // 쉴드 상태 시각 효과 (개수에 따라 다르게)
+        if (this.shieldCount > 0) {
+            // 두께를 얇게 조정 (2, 3, 4)
+            ctx.lineWidth = 2 + (this.shieldCount - 1) * 1;
+
+            if (this.shieldCount === 1) ctx.strokeStyle = '#00FFFF'; // 시안 (1개)
+            else if (this.shieldCount === 2) ctx.strokeStyle = '#0088FF'; // 파랑 (2개)
+            else ctx.strokeStyle = '#8800FF'; // 보라 (3개)
+
+            ctx.beginPath();
+            ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width * 0.6, 0, Math.PI * 2);
+            ctx.stroke();
         }
 
         // 디버그: 히트박스 그리기

@@ -29,6 +29,12 @@ export const ITEM_CONFIG = {
     // 아이템 타입 정의
     TYPES: {
         SCORE: 'SCORE',
-        // 추후 추가: HEAL, INVINCIBLE, WEAPON 등
+        SHIELD: 'SHIELD'
+    },
+
+    // 아이템 생성 확률 (합이 1.0이 되도록)
+    PROBABILITIES: {
+        SCORE: 0.8,
+        SHIELD: 0.2
     }
 };

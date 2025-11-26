@@ -9,6 +9,7 @@ import { Projectile } from './entities/Projectile.js';
 import { GAME_VERSION } from './constants/Version.js';
 import { DIFFICULTY_SETTINGS, SPEED_ACCELERATION, DEBUG_MODE } from './constants/GameConfig.js';
 import { ITEM_CONFIG } from './constants/ItemConfig.js';
+import { FloatingMessage } from './ui/FloatingMessage.js';
 
 /**
  * 게임 매니저 클래스 (GameManager)
@@ -50,6 +51,7 @@ export class GameManager {
         this.obstacles = []; // 장애물 배열
         this.items = []; // 아이템 배열
         this.projectiles = []; // 총알 배열
+        this.floatingMessages = []; // 플로팅 메시지 배열
         this.obstacleTimer = 0;
         this.obstacleInterval = 2000; // 초기값 (update에서 재계산됨)
         this.itemTimer = 0;
@@ -118,6 +120,10 @@ export class GameManager {
         this.background.update(deltaTime);
         this.player.update(this.input, deltaTime);
 
+        // 플로팅 메시지 업데이트
+        this.floatingMessages.forEach(msg => msg.update(deltaTime));
+        this.floatingMessages = this.floatingMessages.filter(msg => !msg.markedForDeletion);
+
         // 총알 업데이트 및 충돌 처리
         this.projectiles.forEach(projectile => {
             projectile.update(deltaTime);
@@ -156,7 +162,22 @@ export class GameManager {
         this.obstacles.forEach(obstacle => {
             obstacle.update(deltaTime);
             if (this.checkCollision(this.player, obstacle)) {
-                this.gameOver();
+                // 쉴드가 있으면 방어 시도
+                if (this.player.hitShield()) {
+                    this.audioManager.playItemSound(); // 방어 효과음
+
+                    // 방어 메시지
+                    this.floatingMessages.push(
+                        new FloatingMessage("BLOCK!", this.player.x, this.player.y, this.player.x, this.player.y - 50, '#00FFFF')
+                    );
+
+                    // 장애물 제거
+                    obstacle.markedForDeletion = true;
+                } else if (this.player.invincibleTimer > 0) {
+                    // 일시 무적 상태면 그냥 통과 (데미지 없음)
+                } else {
+                    this.gameOver();
+                }
             }
         });
         this.obstacles = this.obstacles.filter(obstacle => !obstacle.markedForDeletion);
@@ -186,7 +207,13 @@ export class GameManager {
                 }
 
                 if (canSpawn) {
-                    this.items.push(new Item(this));
+                    // 확률에 따라 아이템 타입 결정
+                    const rand = Math.random();
+                    let type = ITEM_CONFIG.TYPES.SCORE;
+                    if (rand > ITEM_CONFIG.PROBABILITIES.SCORE) {
+                        type = ITEM_CONFIG.TYPES.SHIELD;
+                    }
+                    this.items.push(new Item(this, type));
                 }
             }
 
@@ -201,8 +228,19 @@ export class GameManager {
             item.update(deltaTime);
             if (this.checkCollision(this.player, item)) {
                 item.markedForDeletion = true;
-                this.score += 100;
                 this.audioManager.playItemSound();
+
+                if (item.type === ITEM_CONFIG.TYPES.SCORE) {
+                    this.score += 100;
+                    this.floatingMessages.push(
+                        new FloatingMessage("+100", item.x, item.y, item.x, item.y - 50, '#FFFF00')
+                    );
+                } else if (item.type === ITEM_CONFIG.TYPES.SHIELD) {
+                    this.player.addShield(); // 쉴드 추가
+                    this.floatingMessages.push(
+                        new FloatingMessage("SHIELD!", item.x, item.y, item.x, item.y - 50, '#00FFFF')
+                    );
+                }
             }
         });
         this.items = this.items.filter(item => !item.markedForDeletion);
@@ -237,6 +275,8 @@ export class GameManager {
         this.obstacles.forEach(obstacle => obstacle.draw(this.ctx));
         this.items.forEach(item => item.draw(this.ctx));
         this.projectiles.forEach(projectile => projectile.draw(this.ctx));
+
+        this.floatingMessages.forEach(msg => msg.draw(this.ctx));
 
         if (DEBUG_MODE) {
             this.drawDebugInfo();
@@ -315,6 +355,7 @@ export class GameManager {
         this.obstacles = [];
         this.items = [];
         this.projectiles = [];
+        this.floatingMessages = [];
         this.obstacleTimer = 0;
         this.itemTimer = 0;
 
