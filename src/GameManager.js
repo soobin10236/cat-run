@@ -100,6 +100,7 @@ export class GameManager {
 
         // 그룹 관련 UI
         this.groupBtn = document.getElementById('group-btn');
+        this.groupBtnGameOver = document.getElementById('group-btn-gameover');
         this.groupModal = document.getElementById('group-modal');
         this.closeGroupModalBtn = document.getElementById('close-group-modal-btn');
         this.createGroupBtn = document.getElementById('create-group-btn');
@@ -441,6 +442,13 @@ export class GameManager {
         // 그룹 관련 이벤트
         if (this.groupBtn) {
             this.groupBtn.addEventListener('click', () => {
+                this.groupModal.classList.remove('hidden');
+                this.updateGroupUI();
+            });
+        }
+
+        if (this.groupBtnGameOver) {
+            this.groupBtnGameOver.addEventListener('click', () => {
                 this.groupModal.classList.remove('hidden');
                 this.updateGroupUI();
             });

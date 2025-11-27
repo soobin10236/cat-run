@@ -36,48 +36,57 @@
                 </div>
 
                 <!-- 상위 % 표시 -->
-                <div id="percentile-container" class="percentile-container hidden">
+                <!-- <div id="percentile-container" class="percentile-container hidden">
                     <p class="percentile-text">상위 <span id="percentile-value">--</span>%</p>
                     <div class="percentile-bar-box">
                         <div class="percentile-bar-bg"></div>
                         <div id="percentile-marker" class="percentile-marker">▼</div>
                     </div>
-                </div>
+                </div> -->
             </div>
 
             <!-- Start Screen -->
             <div id="start-screen" class="ui-screen">
-                <h1>Cat Run</h1>
-                <p>장애물을 넘고 아이템을 획득하세요!</p>
+                <h1>🐱 Cat Run 😻</h1>
+                <!-- <p>장애물을 넘고 아이템을 획득하세요!</p> -->
                 <div class="button-group">
-                    <button id="start-btn" class="pixel-btn">START GAME</button>
-                    <button id="show-leaderboard-start-btn" class="pixel-btn secondary-btn">RANKING</button>
-                    <button id="group-btn" class="pixel-btn group-btn">그룹 플레이</button>
+                    <button id="start-btn" class="pixel-btn">😺게임 시작</button>
+                    <button id="show-leaderboard-start-btn" class="pixel-btn secondary-btn">🏆랭킹</button>
+                    <button id="group-btn" class="pixel-btn group-btn">👥그룹</button>
                 </div>
             </div>
 
             <!-- Game Over Screen -->
             <div id="game-over-screen" class="hidden ui-screen">
-                <h1>게임 오버</h1>
-                <p>점수: <span id="final-score">0</span></p>
+                <h1>점수: <span id="final-score">0</span></h1>
+                <!-- 상위 % 표시 -->
+                <div id="percentile-container" class="percentile-container hidden">
+                    <p class="percentile-text">전체 상위 <span id="percentile-value">--</span>%</p>
+                    <div class="percentile-bar-box">
+                        <div class="percentile-bar-bg"></div>
+                        <div id="percentile-marker" class="percentile-marker">▼</div>
+                    </div>
+                </div>
 
-                <div class="button-container">
-                    <button id="restart-btn" class="pixel-btn">다시 하기</button>
-                    <button id="share-btn" class="pixel-btn secondary-btn" style="background-color: #9b59b6;">📤
-                        도전장</button>
-                    <button id="show-leaderboard-btn" class="pixel-btn secondary-btn">🏆 ranking</button>
+                <div class="button-container button-grid">
+                    <button id="restart-btn" class="pixel-btn">😺재시작</button>
+                    <button id="share-btn" class="pixel-btn secondary-btn" style="background-color: #9b59b6;">🔗
+                        공유</button>
+                    <button id="show-leaderboard-btn" class="pixel-btn secondary-btn">🏆 랭킹</button>
+                    <button id="group-btn-gameover" class="pixel-btn group-btn">👥그룹</button>
                 </div>
             </div>
 
             <!-- Pause Overlay -->
             <div id="pause-overlay" class="hidden ui-screen">
-                <h1>일시 정지</h1>
+                <h1>⏸️ 일시 정지</h1>
                 <button id="resume-btn" class="pixel-btn">계속 하기</button>
                 <p>'P'를 눌러 계속하기</p>
             </div>
 
             <!-- Leaderboard Screen -->
             <div id="leaderboard-screen" class="hidden ui-screen">
+                <br />
                 <h1>🏆 명예의 전당 🏆</h1>
                 <div id="leaderboard-filter" style="margin-bottom: 10px;">
                     <button id="filter-global-btn" class="pixel-btn filter-btn active"
@@ -108,11 +117,11 @@
             <!-- Group Modal -->
             <div id="group-modal" class="hidden ui-screen">
                 <div class="modal-content">
-                    <h2>👥 그룹 플레이</h2>
+                    <h2>👥 그룹</h2>
                     <div id="group-status-area">
                         <p>현재 그룹: <span id="current-group-id" style="font-weight: bold; color: #e67e22;">없음</span></p>
                         <div id="group-buttons-area" class="hidden">
-                            <button id="copy-group-code-btn" class="pixel-btn secondary-btn">📋 코드 복사</button>
+                            <button id="copy-group-code-btn" class="pixel-btn secondary-btn">📋 그룹 코드 복사</button>
                             <button id="copy-invite-link-btn" class="pixel-btn group-btn">🔗 초대 링크 복사</button>
                         </div>
                         <button id="leave-group-btn" class="pixel-btn hidden" style="background-color: #c0392b;">그룹
@@ -202,7 +211,7 @@
         <!-- 3. Bottom Screen: Ads -->
         <div id="ad-area">
             <div class="ad-placeholder">
-                <span>ADVERTISEMENT AREA</span>
+                <span>플레이해주셔서 감사합니다.🙏</span>
             </div>
         </div>
     </div>

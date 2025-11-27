@@ -123,6 +123,19 @@ canvas {
     margin-bottom: 20px;
 }
 
+/* Button Group - 홈 화면 및 게임 오버 화면 버튼 중앙 정렬 */
+.button-group,
+.button-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* 중앙 정렬 */
+    width: 100%;
+    max-width: 400px;
+    gap: 15px;
+}
+
+
 /* Modal Content */
 .modal-content {
     background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
@@ -135,6 +148,8 @@ canvas {
     width: 400px;
     max-height: 80%;
     overflow-y: auto;
+    margin-top: 60px;
+    /* 이 값을 조정하여 위치 변경 */
 }
 
 .modal-content h2 {
@@ -343,7 +358,7 @@ canvas {
 
 /* Percentile Bar */
 .percentile-container {
-    margin: 10px 0;
+    margin: -10px 0;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -461,10 +476,30 @@ canvas {
     background: radial-gradient(circle at 30% 30%, #2980b9, #1f618d);
 }
 
+/* 2x2 버튼 그리드 */
+.button-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* 2열 */
+    grid-template-rows: 1fr 1fr;
+    /* 2행 */
+    gap: 15px;
+    width: 80%;
+    max-width: 400px;
+    margin: 30px auto 0 auto;
+    /* 상 좌우auto 하 */
+}
+
+.button-grid .pixel-btn {
+    width: 80%;
+    margin: 0;
+    margin: auto;
+}
+
 /* Pixel Buttons (UI) */
 .pixel-btn {
     display: inline-block;
-    padding: 15px 20px;
+    padding: 10px 15px;
     font-family: 'Courier New', Courier, monospace;
     font-size: 1.2rem;
     font-weight: bold;
@@ -477,7 +512,19 @@ canvas {
     cursor: pointer;
     margin: 10px;
     transition: transform 0.1s, box-shadow 0.1s;
-    width: 80%;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: white;
+    text-transform: uppercase;
+    text-decoration: none;
+    background-color: #e74c3c;
+    border: 4px solid white;
+    box-shadow: 4px 4px 0px #000;
+    cursor: pointer;
+    margin: 5px 0;
+    transition: transform 0.1s, box-shadow 0.1s;
+    width: 40%;
     max-width: 300px;
 }
 

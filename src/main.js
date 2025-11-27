@@ -55,7 +55,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         await preloadImages();
         // 로딩 완료
         startBtn.disabled = false;
-        startBtn.innerText = "Start Game";
+        startBtn.innerText = "😺게임 시작";
         startBtn.style.backgroundColor = ""; // 원래 색으로 복구
         startBtn.style.cursor = "pointer";
     } catch (error) {
