@@ -1,6 +1,6 @@
 /* Reset & Base Styles */
 :root {
-    --screen-height-ratio: 45%;
+    --screen-height-ratio: 55%;
     --ad-height: 60px;
     --bg-color: #2c3e50;
     --console-body-color: #1a1a1a;
@@ -61,8 +61,7 @@ body {
     height: 100%;
     max-width: 100%;
     max-height: 100%;
-    aspect-ratio: 2 / 1;
-    /* Keep game aspect ratio */
+    /* aspect-ratio removed to fill screen */
 }
 
 canvas {
@@ -130,7 +129,8 @@ canvas {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 10%;
+    padding: 40px 10% 20px 10%;
+    /* Increased top padding to push buttons down */
     background: linear-gradient(180deg, #2c2c2c 0%, #1a1a1a 100%);
     position: relative;
 }
@@ -153,25 +153,51 @@ canvas {
     justify-content: center;
 }
 
-/* Physical Buttons */
+/* Physical Buttons (Pixel Style) */
 .game-btn {
     width: clamp(80px, 20vw, 120px);
     height: clamp(80px, 20vw, 120px);
-    border-radius: 50%;
+    border-radius: 0;
+    /* Square for pixel look */
     border: none;
-    background: radial-gradient(circle at 30% 30%, #555, #222);
-    box-shadow:
-        0 6px 0 #000,
-        0 10px 10px rgba(0, 0, 0, 0.5),
-        inset 0 2px 5px rgba(255, 255, 255, 0.2);
+    background: transparent;
+    /* Transparent touch area */
+    box-shadow: none;
     color: rgba(255, 255, 255, 0.7);
     font-weight: bold;
     font-size: 1.2rem;
     cursor: pointer;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Inner visual part of the button */
+.game-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60%;
+    /* Smaller visual area */
+    height: 60%;
+    background-color: #555;
     box-shadow:
-        0 0 0 #000,
-        inset 0 2px 5px rgba(0, 0, 0, 0.8);
-    background: radial-gradient(circle at 30% 30%, #444, #111);
+        inset 4px 4px 0px rgba(255, 255, 255, 0.2),
+        inset -4px -4px 0px rgba(0, 0, 0, 0.4),
+        4px 4px 0px #000;
+    z-index: -1;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.game-btn:active::after,
+.game-btn.active::after {
+    transform: translate(-50%, -50%) translate(4px, 4px);
+    box-shadow: none;
 }
 
 .game-btn .btn-label {
@@ -185,22 +211,22 @@ canvas {
     font-weight: 900;
 }
 
-.game-btn.jump {
-    background: radial-gradient(circle at 30% 30%, #e74c3c, #c0392b);
+.game-btn.jump::after {
+    background-color: #e74c3c;
 }
 
-.game-btn.jump:active,
-.game-btn.jump.active {
-    background: radial-gradient(circle at 30% 30%, #c0392b, #a93226);
+.game-btn.jump:active::after,
+.game-btn.jump.active::after {
+    background-color: #c0392b;
 }
 
-.game-btn.slide {
-    background: radial-gradient(circle at 30% 30%, #3498db, #2980b9);
+.game-btn.slide::after {
+    background-color: #3498db;
 }
 
-.game-btn.slide:active,
-.game-btn.slide.active {
-    background: radial-gradient(circle at 30% 30%, #2980b9, #2471a3);
+.game-btn.slide:active::after,
+.game-btn.slide.active::after {
+    background-color: #2980b9;
 }
 
 /* 3. Ad Area (Bottom) */
@@ -297,12 +323,24 @@ button:not(.game-btn):not(.pixel-btn):active {
     background-color: #3498db !important;
 }
 
-/* Top Right UI Buttons */
+/* Top Right UI Buttons Container */
+.top-right-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 10px;
+    z-index: 100;
+    pointer-events: auto;
+}
+
 #pause-btn,
 #mute-btn,
 #feedback-btn {
-    position: absolute;
-    right: 10px;
+    position: relative;
+    /* Reset position for flex layout */
+    top: auto;
+    right: auto;
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -313,18 +351,7 @@ button:not(.game-btn):not(.pixel-btn):active {
     font-size: 18px;
     background: rgba(0, 0, 0, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.5);
-}
-
-#mute-btn {
-    top: 10px;
-}
-
-#pause-btn {
-    top: 55px;
-}
-
-#feedback-btn {
-    top: 100px;
+    /* z-index and pointer-events handled by container */
 }
 
 /* Modal Styles */
