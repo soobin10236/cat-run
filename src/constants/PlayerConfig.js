@@ -14,6 +14,6 @@ export const PLAYER_CONFIG = {
     GROUND_OFFSET_RATIO: 0.16,
 
     // 물리 엔진 관련 (화면 높이 기준 비율)
-    JUMP_POWER_RATIO: 0.022, // 점프 힘
-    GRAVITY_RATIO: 0.0009    // 중력
+    JUMP_POWER_RATIO: 0.020, // 점프 힘
+    GRAVITY_RATIO: 0.0008    // 중력
 };
