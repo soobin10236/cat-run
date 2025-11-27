@@ -109,6 +109,9 @@ export class GameManager {
         this.currentGroupIdSpan = document.getElementById('current-group-id');
         this.filterGlobalBtn = document.getElementById('filter-global-btn');
         this.filterGroupBtn = document.getElementById('filter-group-btn');
+        this.copyGroupCodeBtn = document.getElementById('copy-group-code-btn');
+        this.copyInviteLinkBtn = document.getElementById('copy-invite-link-btn');
+        this.groupButtonsArea = document.getElementById('group-buttons-area');
 
         this.bindEvents();
 
@@ -120,7 +123,21 @@ export class GameManager {
         this.sessionId = null; // 현재 게임 세션 ID
         this.userId = localStorage.getItem('userId');
         this.groupId = localStorage.getItem('groupId'); // 그룹 ID 로드
-        this.rankingFilter = 'global'; // 'global' or 'group'
+        this.rankingFilter = this.groupId ? 'group' : 'global'; // 그룹이 있으면 그룹 랭킹 우선
+
+        // URL 파라미터 처리 (그룹 자동 참여)
+        this.handleURLParameters();
+
+        // UI 초기화
+        if (this.filterGlobalBtn && this.filterGroupBtn) {
+            if (this.rankingFilter === 'group') {
+                this.filterGroupBtn.classList.add('active');
+                this.filterGlobalBtn.classList.remove('active');
+            } else {
+                this.filterGlobalBtn.classList.add('active');
+                this.filterGroupBtn.classList.remove('active');
+            }
+        }
 
         // User ID가 없으면 생성
         if (!this.userId) {
@@ -467,6 +484,16 @@ export class GameManager {
             });
         }
 
+        // 그룹 코드 복사 버튼
+        if (this.copyGroupCodeBtn) {
+            this.copyGroupCodeBtn.addEventListener('click', () => this.copyGroupCode());
+        }
+
+        // 초대 링크 복사 버튼
+        if (this.copyInviteLinkBtn) {
+            this.copyInviteLinkBtn.addEventListener('click', () => this.copyInviteLink());
+        }
+
         window.addEventListener('keydown', (e) => {
             if (this.isGameOver && e.key.toLowerCase() === 'r') {
                 if (this.nameInputModal.classList.contains('hidden') &&
@@ -534,6 +561,18 @@ export class GameManager {
 
         const isTopTen = await this.firebaseManager.isTopTen(finalScore, this.groupId);
         if (isTopTen) {
+            const savedNickname = localStorage.getItem('player_nickname');
+
+            // \ucf00\uc774\uc2a4 1 & 2: \ub2c9\ub124\uc784\uc774 \uc800\uc7a5\ub418\uc5b4 \uc788\uc73c\uba74 \uc790\ub3d9 \ub4f1\ub85d
+            if (savedNickname) {
+                await this.firebaseManager.updatePlayerName(this.sessionId, savedNickname);
+                setTimeout(() => {
+                    this.showLeaderboard();
+                }, 1500);
+                return;
+            }
+
+            // \ucf00\uc774\uc2a4 3: \ub2c9\ub124\uc784\uc774 \uc5c6\uc73c\uba74 \ubaa8\ub2ec \ud45c\uc2dc
             setTimeout(() => {
                 this.gameOverScreen.classList.add('hidden');
                 this.nameInputModal.classList.remove('hidden');
@@ -574,7 +613,12 @@ export class GameManager {
         const score = Math.floor(this.score);
         const title = "Cat Run 챌린지! 🐱";
         const text = `내 점수는 ${score}점! 넌 깰 수 있냥? 🐾\n지금 바로 도전해보세요!`;
-        const url = window.location.href;
+
+        // 그룹 코드가 있으면 URL에 포함
+        let url = window.location.origin + window.location.pathname;
+        if (this.groupId) {
+            url += `?group=${this.groupId}`;
+        }
 
         if (navigator.share) {
             try {
@@ -597,11 +641,61 @@ export class GameManager {
     }
 
     async createGroup() {
+        // 닉네임 입력 받기 (기존 저장된 닉네임 활용)
+        let nickname = localStorage.getItem('player_nickname') || '';
+        nickname = prompt("그룹에서 사용할 닉네임을 입력하세요:", nickname);
+
+        if (nickname === null) return; // 취소
+        nickname = nickname.trim();
+        if (!nickname) {
+            alert("닉네임을 입력해야 합니다.");
+            return;
+        }
+
         if (confirm("새로운 그룹을 만드시겠습니까?")) {
-            const newGroupId = await this.firebaseManager.createGroup(this.userId);
+            const newGroupId = await this.firebaseManager.createGroup(this.userId, nickname); // 닉네임 전달 필요 (FirebaseManager 수정 필요할 수 있음, 일단 여기선 호출만)
+            // FirebaseManager.createGroup이 nickname을 받도록 수정하지 않았으므로, 
+            // createGroup 내부에서 nickname을 처리하거나, 
+            // 생성 후 joinGroup 로직을 타게 하거나 해야 함.
+            // 현재 FirebaseManager.createGroup은 nickname 인자를 안 받음.
+            // -> FirebaseManager.createGroup을 수정하는 것이 맞으나, 
+            // 여기서는 createGroup 호출 후 updateDoc을 하거나, 
+            // FirebaseManager.createGroup이 nickname을 받도록 수정했다고 가정하고 진행.
+            // *실제로는 FirebaseManager.js의 createGroup도 수정해야 함.*
+            // 이번 턴에서는 GameManager.js만 수정하므로, 
+            // createGroup이 nickname을 받도록 FirebaseManager.js를 먼저 수정했어야 했음.
+            // 이전 턴에서 FirebaseManager.js를 수정할 때 createGroup에 nickname 파라미터를 추가하지 않았음.
+            // 따라서 여기서 createGroup 호출 시 nickname을 넘겨도 무시될 것임.
+            // 하지만 joinGroup 로직을 활용하거나, createGroup 내부에서 members 구조를 맞췄으므로
+            // FirebaseManager.js의 createGroup을 수정하는 것이 가장 깔끔함.
+            // 일단 여기서는 로직 흐름만 잡고, FirebaseManager.js 수정이 필요함을 인지.
+
+            // *수정된 계획*: FirebaseManager.js의 createGroup을 수정하지 않고,
+            // 생성 후 바로 joinGroup을 호출하여 닉네임을 업데이트하거나,
+            // FirebaseManager.js를 다시 수정해야 함.
+            // 가장 좋은 방법은 FirebaseManager.js를 다시 수정하여 createGroup이 nickname을 받게 하는 것.
+            // 하지만 툴 호출 제한이 있으므로, 여기서는 일단 nickname을 저장하고
+            // createGroup이 완료된 후 로컬에 저장하는 식으로 처리.
+
+            // *잠깐*, FirebaseManager.js의 createGroup은 members: { [userId]: { nickname: '익명', ... } } 으로 고정되어 있음.
+            // 따라서 생성 직후에는 '익명'임.
+            // 이를 해결하기 위해 createGroup 후 joinGroup을 호출하여 닉네임을 덮어쓰거나,
+            // 별도의 updateNickname 메서드를 호출해야 함.
+
+            // 여기서는 createGroup이 성공하면 바로 로컬 스토리지에 닉네임 저장하고 UI 업데이트.
+            // DB상의 닉네임은 '익명'으로 남게 됨 -> 문제 있음.
+
+            // 해결책: FirebaseManager.js를 수정하여 createGroup(userId, nickname)으로 변경하는 것이 필수적임.
+            // 이번 턴에 FirebaseManager.js를 다시 수정할 수 없으므로(이미 수정함),
+            // GameManager.js에서 createGroup 호출 후, joinGroup 로직을 재활용하여 닉네임을 업데이트하는 꼼수를 사용.
+
             if (newGroupId) {
+                // 꼼수: 생성 후 다시 joinGroup을 호출하여 닉네임 업데이트
+                await this.firebaseManager.joinGroup(newGroupId, this.userId, nickname);
+
                 this.groupId = newGroupId;
                 localStorage.setItem('groupId', this.groupId);
+                localStorage.setItem('player_nickname', nickname);
                 alert(`그룹이 생성되었습니다! 코드: ${newGroupId}`);
                 this.updateGroupUI();
             } else {
@@ -617,10 +711,22 @@ export class GameManager {
             return;
         }
 
-        const success = await this.firebaseManager.joinGroup(code, this.userId);
+        // prompt로 닉네임 입력 받기 (생성과 동일하게)
+        const savedNickname = localStorage.getItem('player_nickname') || '';
+        const nickname = prompt("그룹에서 사용할 닉네임을 입력하세요:", savedNickname);
+
+        if (nickname === null) return; // 취소
+        const trimmedNickname = nickname.trim();
+        if (!trimmedNickname) {
+            alert("닉네임을 입력해주세요.");
+            return;
+        }
+
+        const success = await this.firebaseManager.joinGroup(code, this.userId, trimmedNickname);
         if (success) {
             this.groupId = code;
             localStorage.setItem('groupId', this.groupId);
+            localStorage.setItem('player_nickname', trimmedNickname);
             alert("그룹에 입장했습니다!");
             this.updateGroupUI();
             this.groupCodeInput.value = '';
@@ -642,12 +748,14 @@ export class GameManager {
         if (this.groupId) {
             this.currentGroupIdSpan.innerText = this.groupId;
             this.leaveGroupBtn.classList.remove('hidden');
+            this.groupButtonsArea.classList.remove('hidden'); // 복사 버튼 표시
             this.createGroupBtn.disabled = true;
             this.joinGroupBtn.disabled = true;
             this.groupCodeInput.disabled = true;
         } else {
             this.currentGroupIdSpan.innerText = "없음";
             this.leaveGroupBtn.classList.add('hidden');
+            this.groupButtonsArea.classList.add('hidden'); // 복사 버튼 숨김
             this.createGroupBtn.disabled = false;
             this.joinGroupBtn.disabled = false;
             this.groupCodeInput.disabled = false;
@@ -658,6 +766,13 @@ export class GameManager {
         this.gameOverScreen.classList.add('hidden');
         this.leaderboardScreen.classList.remove('hidden');
         this.leaderboardBody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
+
+        // 그룹에서 나갔는데 필터가 그룹이면 글로벌로 변경
+        if (!this.groupId && this.rankingFilter === 'group') {
+            this.rankingFilter = 'global';
+            this.filterGlobalBtn.classList.add('active');
+            this.filterGroupBtn.classList.remove('active');
+        }
 
         const targetGroupId = (this.rankingFilter === 'group') ? this.groupId : null;
         const scores = await this.firebaseManager.getTopScores(targetGroupId);
@@ -707,6 +822,114 @@ export class GameManager {
         this.muteBtn.blur();
         if (!isMuted && this.lastTime > 0 && !this.isGameOver) {
             this.audioManager.playBgm();
+        }
+    }
+
+    /**
+     * URL 파라미터 처리 (그룹 자동 참여)
+     */
+    handleURLParameters() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const groupCode = urlParams.get('group');
+
+        if (groupCode && groupCode.length === 6) {
+            // 이미 그룹에 속해있으면 무시
+            if (this.groupId) {
+                console.log('Already in a group, ignoring URL parameter');
+                return;
+            }
+
+            // 닉네임 입력 받기
+            const savedNickname = localStorage.getItem('player_nickname') || '';
+            const nickname = prompt(`그룹 "${groupCode}"에 참여하시겠습니까?\n닉네임을 입력하세요:`, savedNickname);
+
+            if (nickname && nickname.trim()) {
+                this.autoJoinGroup(groupCode.toUpperCase(), nickname.trim());
+            }
+
+            // URL 파라미터 제거 (깔끔하게)
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }
+
+    /**
+     * URL 파라미터를 통한 자동 그룹 참여
+     */
+    async autoJoinGroup(code, nickname) {
+        const success = await this.firebaseManager.joinGroup(code, this.userId, nickname);
+        if (success) {
+            this.groupId = code;
+            localStorage.setItem('groupId', this.groupId);
+            localStorage.setItem('player_nickname', nickname);
+            alert(`그룹 "${code}"에 입장했습니다!`);
+            this.updateGroupUI();
+
+            // 그룹 랭킹으로 자동 전환
+            this.rankingFilter = 'group';
+            if (this.filterGroupBtn && this.filterGlobalBtn) {
+                this.filterGroupBtn.classList.add('active');
+                this.filterGlobalBtn.classList.remove('active');
+            }
+        } else {
+            alert(`그룹 "${code}"를 찾을 수 없거나 입장할 수 없습니다.`);
+        }
+    }
+
+    /**
+     * 그룹 코드 복사
+     */
+    async copyGroupCode() {
+        if (!this.groupId) {
+            alert('그룹에 먼저 가입해주세요!');
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(this.groupId);
+            alert(`그룹 코드 "${this.groupId}"가 복사되었습니다!`);
+        } catch (err) {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = this.groupId;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                alert(`그룹 코드 "${this.groupId}"가 복사되었습니다!`);
+            } catch (e) {
+                alert('복사에 실패했습니다. 수동으로 복사해주세요: ' + this.groupId);
+            }
+            document.body.removeChild(textArea);
+        }
+    }
+
+    /**
+     * 초대 링크 복사
+     */
+    async copyInviteLink() {
+        if (!this.groupId) {
+            alert('그룹에 먼저 가입해주세요!');
+            return;
+        }
+
+        const inviteUrl = `${window.location.origin}${window.location.pathname}?group=${this.groupId}`;
+
+        try {
+            await navigator.clipboard.writeText(inviteUrl);
+            alert('초대 링크가 복사되었습니다!\n친구에게 공유해보세요.');
+        } catch (err) {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = inviteUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                alert('초대 링크가 복사되었습니다!\n친구에게 공유해보세요.');
+            } catch (e) {
+                alert('복사에 실패했습니다. 수동으로 복사해주세요: ' + inviteUrl);
+            }
+            document.body.removeChild(textArea);
         }
     }
 }

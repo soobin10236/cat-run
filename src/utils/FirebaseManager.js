@@ -148,7 +148,12 @@ export class FirebaseManager {
             await setDoc(groupDocRef, {
                 creatorId: userId,
                 createdAt: serverTimestamp(),
-                members: [userId]
+                members: {
+                    [userId]: {
+                        nickname: '익명', // 생성자는 기본 닉네임
+                        joinedAt: new Date().toISOString()
+                    }
+                }
             });
 
             return groupId;
@@ -159,20 +164,29 @@ export class FirebaseManager {
     }
 
     /**
-     * 그룹 입장
+     * 그룹 참여
      */
-    async joinGroup(groupId, userId) {
+    async joinGroup(groupId, userId, nickname = '익명') {
         try {
-            const groupDocRef = doc(this.db, "groups", groupId);
-            const groupDoc = await getDoc(groupDocRef);
+            const groupRef = doc(this.db, "groups", groupId);
+            const groupSnap = await getDoc(groupRef);
 
-            if (groupDoc.exists()) {
-                await updateDoc(groupDocRef, {
-                    members: arrayUnion(userId)
+            if (groupSnap.exists()) {
+                // 그룹 멤버에 추가 (닉네임 포함)
+                await updateDoc(groupRef, {
+                    [`members.${userId}`]: {
+                        nickname: nickname,
+                        joinedAt: new Date().toISOString()
+                    }
                 });
+
+                // 로컬 스토리지에 닉네임 저장
+                localStorage.setItem('player_nickname', nickname);
+
                 return true;
             } else {
-                return false; // 그룹 없음
+                console.error("Group not found");
+                return false;
             }
         } catch (e) {
             console.error("Error joining group: ", e);
