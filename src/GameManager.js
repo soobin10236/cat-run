@@ -841,18 +841,40 @@ export class GameManager {
         const groupCode = urlParams.get('group');
 
         if (groupCode && groupCode.length === 6) {
-            // 이미 그룹에 속해있으면 무시
+            const normalizedGroupCode = groupCode.toUpperCase();
+
+            // 이미 그룹에 속해있는 경우
             if (this.groupId) {
-                console.log('Already in a group, ignoring URL parameter');
-                return;
+                // 같은 그룹 링크를 클릭한 경우
+                if (this.groupId === normalizedGroupCode) {
+                    alert(`이미 그룹 "${this.groupId}"에 속해있습니다.`);
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    return;
+                }
+
+                // 다른 그룹 링크를 클릭한 경우 - 전환 여부 확인
+                const confirmSwitch = confirm(
+                    `현재 그룹 "${this.groupId}"에 속해있습니다.\n` +
+                    `그룹 "${normalizedGroupCode}"로 이동하시겠습니까?`
+                );
+
+                if (!confirmSwitch) {
+                    // 사용자가 거부 - URL 파라미터만 제거하고 기존 그룹 유지
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    return;
+                }
+
+                // 사용자가 승인 - 기존 그룹에서 나가기
+                this.groupId = null;
+                localStorage.removeItem('groupId');
             }
 
             // 닉네임 입력 받기
             const savedNickname = localStorage.getItem('player_nickname') || '';
-            const nickname = prompt(`그룹 "${groupCode}"에 참여하시겠습니까?\n닉네임을 입력하세요:`, savedNickname);
+            const nickname = prompt(`그룹 "${normalizedGroupCode}"에 참여하시겠습니까?\n닉네임을 입력하세요:`, savedNickname);
 
             if (nickname && nickname.trim()) {
-                this.autoJoinGroup(groupCode.toUpperCase(), nickname.trim());
+                this.autoJoinGroup(normalizedGroupCode, nickname.trim());
             }
 
             // URL 파라미터 제거 (깔끔하게)
