@@ -155,8 +155,8 @@ canvas {
 
 /* Physical Buttons (Pixel Style) */
 .game-btn {
-    width: clamp(80px, 20vw, 120px);
-    height: clamp(80px, 20vw, 120px);
+    width: clamp(160px, 28vw, 200px);
+    height: clamp(160px, 28vw, 200px);
     border-radius: 0;
     /* Square for pixel look */
     border: none;

@@ -13,7 +13,7 @@ export class AudioManager {
         // 주의: 실제 파일이 없으면 에러가 날 수 있으므로 try-catch 처리하거나 파일 존재 확인 필요
         this.bgmAudio = new Audio(ASSETS.AUDIO.BGM);
         this.bgmAudio.loop = true; // 무한 반복
-        this.bgmAudio.volume = 0.3; // 배경음은 약간 작게
+        this.bgmAudio.volume = 0.2; // 배경음은 약간 작게
 
         // 점프 효과음 (meow.mp3)
         this.jumpAudio = new Audio(ASSETS.AUDIO.JUMP);

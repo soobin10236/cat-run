@@ -6,7 +6,7 @@
 export const DIFFICULTY_SETTINGS = {
     GAME_SPEED: {
         INITIAL: 4.0,
-        MAX: 9.0, // MAX 속도 도달 시점의 목표 속도
+        MAX: 8.0, // MAX 속도 도달 시점의 목표 속도
         TARGET_TIME_SECONDS: 90, // MAX 속도 도달 시간
     },
     OBSTACLE: {

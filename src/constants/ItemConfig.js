@@ -4,7 +4,7 @@
  */
 export const ITEM_CONFIG = {
     // 아이템 크기 비율 (화면 높이 기준)
-    SIZE_RATIO: 0.12, // 약 48px @ 800h
+    SIZE_RATIO: 0.08, // 약 48px @ 800h
 
     // 바닥 여백 비율 (ObstacleConfig.GROUND_OFFSET_RATIO와 비슷하거나 약간 다르게)
     GROUND_OFFSET_RATIO: 0.19, // 장애물과 동일하게 설정
