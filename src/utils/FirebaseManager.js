@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, doc, onSnapshot, updateDoc, getCountFromServer, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, doc, onSnapshot, updateDoc, getCountFromServer, where, setDoc, getDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
 
 const firebaseConfig = {
@@ -27,10 +27,10 @@ export class FirebaseManager {
     /**
      * 게임 세션 시작 (DB에 초기 기록 생성)
      */
-    async startSession(userId, version) {
+    async startSession(userId, version, groupId = null) {
         try {
             const scoresRef = collection(this.db, "scores");
-            const docRef = await addDoc(scoresRef, {
+            const data = {
                 userId: userId,
                 playerName: 'Anonymous',
                 score: 0,
@@ -39,7 +39,13 @@ export class FirebaseManager {
                 status: 'playing',
                 timestamp: serverTimestamp(),
                 date: new Date().toLocaleDateString()
-            });
+            };
+
+            if (groupId) {
+                data.groupId = groupId;
+            }
+
+            const docRef = await addDoc(scoresRef, data);
             return docRef.id;
         } catch (e) {
             console.error("Error starting session: ", e);
@@ -85,21 +91,27 @@ export class FirebaseManager {
     }
 
     /**
-     * 상위 10개 점수 가져오기
+     * 상위 10개 점수 가져오기 (전체 또는 그룹)
      */
-    async getTopScores() {
+    async getTopScores(groupId = null) {
         try {
             const scoresRef = collection(this.db, "scores");
-            // status가 finished인 것만 가져오면 좋겠지만, 인덱스 문제로 단순화
-            const q = query(scoresRef, orderBy("score", "desc"), limit(10));
+            let q;
+
+            if (groupId) {
+                // 그룹 랭킹: groupId가 일치하고 score 내림차순
+                // 복합 인덱스 필요할 수 있음: groupId ASC, score DESC
+                q = query(scoresRef, where("groupId", "==", groupId), orderBy("score", "desc"), limit(10));
+            } else {
+                // 전체 랭킹
+                q = query(scoresRef, orderBy("score", "desc"), limit(10));
+            }
 
             const querySnapshot = await getDocs(q);
             const scores = [];
 
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                // 점수가 0이거나 playing 상태인 것은 제외 (혹은 쿼리에서 필터링)
-                // 여기서는 간단히 필터링
                 if (data.score > 0) {
                     scores.push(data);
                 }
@@ -108,8 +120,63 @@ export class FirebaseManager {
             return scores;
         } catch (e) {
             console.error("Error getting documents: ", e);
-            alert("랭킹을 불러오는 중 오류가 발생했습니다: " + e.message);
+            // 인덱스 에러일 경우 콘솔에 링크가 뜸. 개발자가 생성해야 함.
+            if (e.code === 'failed-precondition') {
+                console.warn("Firebase Index required for this query.");
+            }
             return [];
+        }
+    }
+
+    /**
+     * 그룹 생성
+     */
+    async createGroup(userId) {
+        try {
+            // 6자리 랜덤 코드 생성 (대문자 + 숫자)
+            const groupId = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+            // 그룹 문서 생성 (ID를 코드로 사용)
+            const groupDocRef = doc(this.db, "groups", groupId);
+
+            // 이미 존재하는지 확인 (희박하지만)
+            const docSnap = await getDoc(groupDocRef);
+            if (docSnap.exists()) {
+                return this.createGroup(userId); // 재시도
+            }
+
+            await setDoc(groupDocRef, {
+                creatorId: userId,
+                createdAt: serverTimestamp(),
+                members: [userId]
+            });
+
+            return groupId;
+        } catch (e) {
+            console.error("Error creating group: ", e);
+            return null;
+        }
+    }
+
+    /**
+     * 그룹 입장
+     */
+    async joinGroup(groupId, userId) {
+        try {
+            const groupDocRef = doc(this.db, "groups", groupId);
+            const groupDoc = await getDoc(groupDocRef);
+
+            if (groupDoc.exists()) {
+                await updateDoc(groupDocRef, {
+                    members: arrayUnion(userId)
+                });
+                return true;
+            } else {
+                return false; // 그룹 없음
+            }
+        } catch (e) {
+            console.error("Error joining group: ", e);
+            return false;
         }
     }
 
@@ -124,9 +191,9 @@ export class FirebaseManager {
     /**
      * 현재 점수가 상위 10위 안에 드는지 확인
      */
-    async isTopTen(currentScore) {
+    async isTopTen(currentScore, groupId = null) {
         try {
-            const topScores = await this.getTopScores();
+            const topScores = await this.getTopScores(groupId);
 
             // 아직 10명이 안 찼으면 무조건 10위 진입
             if (topScores.length < 10) {

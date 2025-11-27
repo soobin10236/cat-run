@@ -24,7 +24,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     const startScreen = document.getElementById('start-screen');
     const startBtn = document.getElementById('start-btn');
     const showLeaderboardStartBtn = document.getElementById('show-leaderboard-start-btn');
-    const mobileControls = document.getElementById('mobile-controls');
 
     // 패치 노트 관련 요소
     const patchNotesModal = document.getElementById('patch-notes-modal');
@@ -45,11 +44,6 @@ window.addEventListener('DOMContentLoaded', async () => {
         }
         patchNotesModal.classList.add('hidden');
     });
-
-    // 게임 시작 전에는 모바일 컨트롤 숨김
-    if (mobileControls) {
-        mobileControls.style.display = 'none';
-    }
 
     // 1. 이미지 프리로딩 시작
     startBtn.disabled = true;
@@ -72,12 +66,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     // 시작 버튼 클릭 시 게임 시작
     startBtn.addEventListener('click', () => {
         startScreen.classList.add('hidden'); // 시작 화면 숨김
-
-        // 모바일 컨트롤 표시 (모바일인 경우에만)
-        if (mobileControls && window.innerWidth <= 768) {
-            mobileControls.style.display = 'flex';
-        }
-
         gameManager.start(); // 게임 시작 (BGM 재생 포함)
     });
 

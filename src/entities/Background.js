@@ -21,6 +21,11 @@ export class Background {
         this.x2 = this.game.width;
     }
 
+    reset() {
+        this.x1 = 0;
+        this.x2 = this.game.width;
+    }
+
     update(deltaTime) {
         // 프레임 레이트 독립적인 속도 보정 (60FPS 기준)
         const speedFactor = deltaTime / 16.67;

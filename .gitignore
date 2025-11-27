@@ -39,3 +39,5 @@ build/
 
 # PowerShell 실행 로그
 *.ps1.log
+ACTIONPLAN.md
+CONSTRAINTS.md

@@ -1,33 +1,79 @@
 /* Reset & Base Styles */
+:root {
+    --screen-height-ratio: 45%;
+    --ad-height: 60px;
+    --bg-color: #2c3e50;
+    --console-body-color: #1a1a1a;
+    --btn-color: #e0e0e0;
+    --btn-active-color: #c0c0c0;
+    --btn-shadow: #000;
+    --accent-color: #3498db;
+}
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
 body {
     margin: 0;
     padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background-color: #2c3e50;
+    height: 100dvh;
+    background-color: #111;
     font-family: 'Arial', sans-serif;
     color: white;
     overflow: hidden;
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
+    display: flex;
+    justify-content: center;
+}
+
+/* DS Container - Main Wrapper */
+#ds-container {
+    width: 100%;
+    max-width: 500px;
+    /* Tablet/Desktop constraint */
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--console-body-color);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+/* 1. Screen Area (Top) */
+#screen-area {
+    height: var(--screen-height-ratio);
+    width: 100%;
+    background-color: #000;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    border-bottom: 4px solid #333;
 }
 
 #game-container {
     position: relative;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    aspect-ratio: 2 / 1;
+    /* Keep game aspect ratio */
 }
 
 canvas {
+    width: 100%;
+    height: 100%;
     background-color: #87CEEB;
     display: block;
-    border-radius: 8px;
-    touch-action: none;
+    object-fit: contain;
 }
 
-/* UI Overlay */
+/* UI Overlay - Adjusted for new container */
 #ui-layer {
     position: absolute;
     top: 0;
@@ -39,15 +85,16 @@ canvas {
 
 #score-board {
     position: absolute;
-    top: 20px;
-    left: 20px;
-    font-size: 24px;
+    top: 10px;
+    left: 10px;
+    font-size: clamp(16px, 4vw, 24px);
     font-weight: bold;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
     text-align: left;
     line-height: 1.4;
 }
 
+/* UI Screens (Start, Game Over, etc) */
 .ui-screen {
     position: absolute;
     top: 0;
@@ -60,616 +107,351 @@ canvas {
     justify-content: center;
     align-items: center;
     pointer-events: auto;
-    border-radius: 8px;
     z-index: 10;
 }
 
-#start-screen {
-    background-color: rgba(0, 0, 0, 0.3);
-}
-
 .ui-screen h1 {
-    font-size: 48px;
+    font-size: clamp(24px, 8vw, 48px);
     margin-bottom: 10px;
     color: #f1c40f;
-}
-
-#game-over-screen h1 {
-    color: #e74c3c;
+    text-align: center;
 }
 
 .ui-screen p {
-    font-size: 24px;
-    margin-bottom: 30px;
+    font-size: clamp(14px, 4vw, 24px);
+    margin-bottom: 20px;
+    text-align: center;
+    padding: 0 20px;
 }
 
-/* 버튼 스타일 개선 */
-button {
-    padding: 10px 20px;
-    font-size: 16px;
-    background-color: #2ecc71;
-    color: white;
+/* 2. Controls Area (Middle) */
+#controls-area {
+    flex-grow: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 10%;
+    background: linear-gradient(180deg, #2c2c2c 0%, #1a1a1a 100%);
+    position: relative;
+}
+
+/* Decorative lines/texture for console look */
+#controls-area::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Physical Buttons */
+.game-btn {
+    width: clamp(80px, 20vw, 120px);
+    height: clamp(80px, 20vw, 120px);
+    border-radius: 50%;
     border: none;
-    border-radius: 25px;
-    cursor: pointer;
-    transition: all 0.2s;
+    background: radial-gradient(circle at 30% 30%, #555, #222);
+    box-shadow:
+        0 6px 0 #000,
+        0 10px 10px rgba(0, 0, 0, 0.5),
+        inset 0 2px 5px rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.7);
     font-weight: bold;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-    touch-action: manipulation;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow:
+        0 0 0 #000,
+        inset 0 2px 5px rgba(0, 0, 0, 0.8);
+    background: radial-gradient(circle at 30% 30%, #444, #111);
 }
 
-button:hover {
-    background-color: #27ae60;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.25);
+.game-btn .btn-label {
+    font-size: 0.8rem;
+    opacity: 0.5;
+    margin-bottom: 2px;
 }
 
-button:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+.game-btn .btn-key {
+    font-size: 1.5rem;
+    font-weight: 900;
 }
 
+.game-btn.jump {
+    background: radial-gradient(circle at 30% 30%, #e74c3c, #c0392b);
+}
+
+.game-btn.jump:active,
+.game-btn.jump.active {
+    background: radial-gradient(circle at 30% 30%, #c0392b, #a93226);
+}
+
+.game-btn.slide {
+    background: radial-gradient(circle at 30% 30%, #3498db, #2980b9);
+}
+
+.game-btn.slide:active,
+.game-btn.slide.active {
+    background: radial-gradient(circle at 30% 30%, #2980b9, #2471a3);
+}
+
+/* 3. Ad Area (Bottom) */
+#ad-area {
+    height: var(--ad-height);
+    background-color: #000;
+    padding-bottom: env(safe-area-inset-bottom);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-top: 1px solid #333;
+}
+
+.ad-placeholder {
+    color: #555;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+}
+
+/* Button Group (Vertical Stack) */
+.button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+    max-width: 200px;
+    margin-top: 20px;
+}
+
+/* Pixel Art Button Style */
+.pixel-btn {
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 16px;
+    padding: 12px 10px;
+    border: 4px solid white;
+    background-color: #e74c3c;
+    /* Default Red */
+    color: white;
+    box-shadow: 4px 4px 0px #000;
+    border-radius: 0 !important;
+    /* Sharp corners */
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    image-rendering: pixelated;
+    width: 100%;
+}
+
+.pixel-btn:active {
+    transform: translate(4px, 4px);
+    box-shadow: 0px 0px 0px #000;
+}
+
+.pixel-btn.secondary-btn {
+    background-color: #3498db !important;
+    /* Blue */
+}
+
+.pixel-btn.group-btn {
+    background-color: #f39c12 !important;
+    /* Orange */
+}
+
+/* Utility Classes */
 .hidden {
     display: none !important;
 }
 
-/* 게임 오버 화면 버튼 컨테이너 */
-.button-container {
-    display: flex;
-    gap: 15px;
-    margin-top: 20px;
+/* Existing Button Styles (for UI overlays) */
+button:not(.game-btn):not(.pixel-btn) {
+    padding: 8px 16px;
+    font-size: 14px;
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }
 
-#pause-btn {
+button:not(.game-btn):not(.pixel-btn):hover {
+    background-color: #27ae60;
+    transform: translateY(-2px);
+}
+
+button:not(.game-btn):not(.pixel-btn):active {
+    transform: translateY(0);
+}
+
+.secondary-btn:not(.pixel-btn) {
+    background-color: #3498db !important;
+}
+
+/* Top Right UI Buttons */
+#pause-btn,
+#mute-btn,
+#feedback-btn {
     position: absolute;
-    top: 20px;
-    right: 80px;
-    background: rgba(0, 0, 0, 0.5);
-    color: white;
-    border: 2px solid white;
+    right: 10px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    font-size: 24px;
+    padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-    cursor: pointer;
-    padding: 0;
-    pointer-events: auto;
-    transition: background-color 0.2s, transform 0.1s;
-    box-shadow: none;
-}
-
-#pause-btn:hover {
-    background-color: rgba(0, 0, 0, 0.8);
-    transform: scale(1.1);
-}
-
-#pause-btn:active {
-    transform: scale(0.95);
+    font-size: 18px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 #mute-btn {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: rgba(0, 0, 0, 0.5);
-    color: white;
-    border: 2px solid white;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    font-size: 24px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    padding: 0;
-    pointer-events: auto;
-    transition: background-color 0.2s, transform 0.1s;
-    box-shadow: none;
+    top: 10px;
 }
 
-#mute-btn:hover {
-    background-color: rgba(0, 0, 0, 0.8);
-    transform: scale(1.1);
+#pause-btn {
+    top: 55px;
 }
 
-#mute-btn:active {
-    transform: scale(0.95);
-}
-
-/* 피드백 버튼 스타일 */
 #feedback-btn {
-    position: absolute;
-    top: 80px;
-    /* 뮤트 버튼 아래 */
-    right: 20px;
-    background: rgba(0, 0, 0, 0.5);
-    color: white;
-    border: 2px solid white;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    font-size: 24px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    padding: 0;
-    pointer-events: auto;
-    transition: background-color 0.2s, transform 0.1s;
-    box-shadow: none;
+    top: 100px;
 }
 
-#feedback-btn:hover {
-    background-color: rgba(0, 0, 0, 0.8);
-    transform: scale(1.1);
-}
-
-#feedback-btn:active {
-    transform: scale(0.95);
-}
-
-/* 피드백 입력창 스타일 */
-#feedback-input {
-    width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    resize: none;
-    font-family: inherit;
-    box-sizing: border-box;
-}
-
-/* 모바일 터치 컨트롤 - 완전 투명 원형 버튼 */
-.mobile-controls {
-    display: none;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 15;
-}
-
-.mobile-btn {
-    position: absolute;
-    bottom: 5vmin;
-    /* 터치 영역 확장 */
-    width: clamp(140px, 40vmin, 220px);
-    height: clamp(140px, 40vmin, 220px);
-
-    /* background와 border를 제거하고 box-shadow로 시각적인 링만 만듭니다. */
-    background: transparent !important;
-    border: none;
-
-    /* box-shadow로 중앙에 얇고 작은 링을 시각적으로 구현 */
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2) !important;
-
-    border-radius: 50%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    pointer-events: auto;
-    transition: all 0.2s;
-
-}
-
-#jump-btn {
-    left: 5vmin;
-}
-
-#slide-btn {
-    right: 5vmin;
-}
-
-#jump-btn:active,
-#slide-btn:active {
-    /* 배경색을 누르기 전과 동일하게 완전 투명으로 유지 */
-    background: transparent !important;
-
-    /* 링 색상도 원래의 흰색/저투명도로 유지 */
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2) !important;
-
-    /* 폰트 굵기 변화도 제거 */
-    font-weight: normal !important;
-}
-
-/* 3. 잔류 포커스 상태 (:focus) - 이 상태가 엉뚱한 버튼에 남아 초록색으로 변하는 것을 막습니다. */
-#jump-btn:focus,
-#slide-btn:focus {
-    background: transparent !important;
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2) !important;
-    outline: none !important;
-    /* 브라우저 기본 포커스 테두리 제거 */
-}
-
-.mobile-btn:active .btn-icon,
-.mobile-btn:focus .btn-icon {
-    color: rgba(255, 255, 255, 0.2) !important;
-}
-
-/* 세로모드 경고 */
-.rotate-warning {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.95);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 20;
-}
-
-.rotate-icon {
-    font-size: 80px;
-    animation: rotate 2s infinite;
-    margin-bottom: 20px;
-}
-
-@keyframes rotate {
-
-    0%,
-    100% {
-        transform: rotate(0deg);
-    }
-
-    25% {
-        transform: rotate(-20deg);
-    }
-
-    75% {
-        transform: rotate(20deg);
-    }
-}
-
-.rotate-warning p {
-    font-size: 24px;
-    color: #f1c40f;
-    text-align: center;
-}
-
-/* 모바일 전용 스타일 */
-@media (max-width: 768px),
-(hover: none) and (pointer: coarse) {
-    .mobile-controls {
-        display: block !important;
-    }
-
-    #game-container {
-        width: 100vw;
-        height: 100vh;
-    }
-
-    canvas {
-        width: 100%;
-        height: 100%;
-        border-radius: 0;
-    }
-
-    #score-board {
-        font-size: 20px;
-        top: 10px;
-        left: 10px;
-    }
-
-    #pause-btn,
-    #mute-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 20px;
-        top: 10px;
-    }
-
-    #pause-btn {
-        right: 60px;
-    }
-
-    #mute-btn {
-        right: 10px;
-    }
-
-    #feedback-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 20px;
-        top: 60px;
-        /* 모바일에서는 조금 더 위로 */
-        right: 10px;
-    }
-}
-
-/* 세로모드 감지 */
-@media (max-width: 768px) and (orientation: portrait) {
-    .rotate-warning {
-        display: flex !important;
-    }
-}
-
-/* 리더보드 스타일 - 최초 버전 복원 (이미지 참고) */
-.leaderboard-container {
-    background: rgba(0, 0, 0, 0.6);
-    padding: 20px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    max-height: 60vh;
-    overflow-y: auto;
-    width: 80%;
-    max-width: 600px;
-}
-
-#leaderboard-table {
-    width: 100%;
-    border-collapse: collapse;
-    color: white;
-    font-size: 18px;
-}
-
-#leaderboard-table th,
-#leaderboard-table td {
-    padding: 10px;
-    text-align: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-#leaderboard-table th {
-    background-color: rgba(46, 204, 113, 0.5);
-    color: white;
-}
-
-#leaderboard-table tr:nth-child(1) td {
-    color: #f1c40f;
-    /* 1등 금색 */
-    font-weight: bold;
-}
-
-#leaderboard-table tr:nth-child(2) td {
-    color: #bdc3c7;
-    /* 2등 은색 */
-    font-weight: bold;
-}
-
-#leaderboard-table tr:nth-child(3) td {
-    color: #cd7f32;
-    /* 3등 동색 */
-    font-weight: bold;
-}
-
-.secondary-btn {
-    background-color: #3498db;
-}
-
-.secondary-btn:hover {
-    background-color: #2980b9;
-}
-
-/* 이름 입력 모달 (카드 스타일) */
+/* Modal Styles */
 .modal-content {
     background-color: white;
-    padding: 30px;
+    padding: 20px;
     border-radius: 15px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     text-align: center;
-    width: 90%;
-    max-width: 400px;
-    animation: slideUp 0.3s ease-out;
-}
-
-@keyframes slideUp {
-    from {
-        transform: translateY(20px);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-.modal-content h1 {
-    font-size: 32px;
-    color: #f39c12;
-    margin-bottom: 10px;
-    text-shadow: none;
-}
-
-.modal-content p {
-    font-size: 18px;
+    width: 85%;
+    max-width: 350px;
     color: #333;
-    margin-bottom: 25px;
 }
 
-.input-group {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
+.modal-content h2 {
+    color: #f39c12;
+    margin-top: 0;
 }
 
-#player-name-input {
-    padding: 12px;
-    font-size: 16px;
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    width: 60%;
-    outline: none;
-    transition: border-color 0.2s;
+.modal-content input,
+.modal-content textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
 }
 
-#player-name-input:focus {
-    border-color: #2ecc71;
-}
-
-#submit-score-btn {
-    padding: 12px 20px;
-    font-size: 16px;
-    border-radius: 8px;
-    width: auto;
-    white-space: nowrap;
-}
-
-/* 버전 정보 스타일 */
-#game-version {
-    position: absolute;
-    bottom: 5px;
-    right: 10px;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.5);
-    pointer-events: none;
-    z-index: 999;
-}
-
-/* Patch Notes Modal - 이미지 스타일 복원 */
+/* Patch Notes Specific */
 .patch-notes-content {
-    width: 90%;
-    max-width: 500px;
-    max-height: 85%;
+    max-height: 80%;
     display: flex;
     flex-direction: column;
-    padding: 20px;
     text-align: left;
-    background-color: white;
-    /* 흰색 배경 */
-    color: #333;
-    /* 검은 글씨 */
-}
-
-.patch-notes-content h2 {
-    font-size: 1.5rem;
-    margin: 0 0 15px 0;
-    color: #f39c12;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
 }
 
 .patch-list {
-    margin: 10px 0;
     overflow-y: auto;
-    background: #f5f5f5;
-    /* 아주 연한 회색 배경 */
-    padding: 15px;
-    border-radius: 8px;
-    flex: 1;
-    min-height: 0;
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
 }
 
 .patch-list h3 {
+    font-size: 1rem;
     color: #d35400;
-    margin-bottom: 10px;
-    font-size: 1.1rem;
-    margin-top: 5px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
 }
 
 .patch-list ul {
-    list-style-type: disc;
     padding-left: 20px;
-    margin-bottom: 15px;
+    margin: 5px 0 15px 0;
 }
 
 .patch-list li {
-    margin-bottom: 6px;
-    line-height: 1.4;
-    font-size: 0.95rem;
-    color: #555;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
 }
 
 .patch-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 15px;
-    border-top: 1px solid #eee;
-    padding-top: 15px;
-    flex-shrink: 0;
+    font-size: 0.8rem;
 }
 
-.patch-footer label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    color: #7f8c8d;
-}
-
-/* Button Group for Start Screen */
-.button-group {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    margin: 20px 0;
-}
-
-/* Resume Button in Pause Overlay */
-#resume-btn {
+/* Leaderboard Table */
+.leaderboard-container {
+    background: rgba(0, 0, 0, 0.6);
+    padding: 10px;
+    border-radius: 10px;
     margin-bottom: 15px;
-    background-color: #2ecc71;
+    max-height: 50vh;
+    overflow-y: auto;
+    width: 90%;
 }
 
-#resume-btn:hover {
-    background-color: #27ae60;
+#leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: white;
+    font-size: 14px;
 }
 
-/* 상위 % 표시 스타일 */
-.percentile-container {
-    margin: 15px 0;
+#leaderboard-table th,
+#leaderboard-table td {
+    padding: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     text-align: center;
+}
+
+/* Percentile Bar */
+.percentile-container {
+    margin: 10px 0;
     width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-.percentile-text {
-    font-size: 20px !important;
-    color: #f1c40f;
-    margin-bottom: 5px !important;
-    font-weight: bold;
-}
-
 .percentile-bar-box {
-    position: relative;
     width: 80%;
-    max-width: 300px;
-    height: 20px;
+    height: 15px;
     background: #333;
-    border-radius: 10px;
-    margin-top: 5px;
-    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    position: relative;
 }
 
 .percentile-bar-bg {
     width: 100%;
     height: 100%;
-    border-radius: 10px;
-    /* 상위 0%(왼쪽) -> 하위 100%(오른쪽) 그라데이션 */
+    border-radius: 8px;
     background: linear-gradient(to right, #f1c40f 0%, #2ecc71 25%, #3498db 50%, #95a5a6 100%);
 }
 
 .percentile-marker {
     position: absolute;
-    top: -22px;
-    left: 0%;
-    /* JS로 설정 */
+    top: -20px;
     transform: translateX(-50%);
-    font-size: 18px;
     color: white;
-    text-shadow: 0 2px 2px rgba(0, 0, 0, 0.8);
-    transition: left 1s ease-out;
+}
+
+/* Version Info */
+#game-version {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.3);
 }

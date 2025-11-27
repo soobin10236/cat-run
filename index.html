@@ -3,181 +3,207 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Cat Run Game</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <!DOCTYPE html>
-    <html lang="ko">
-
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-        <title>Cat Run Game</title>
-        <link rel="stylesheet" href="style.css">
-        <link rel="manifest" href="manifest.json">
-        <meta name="apple-mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    </head>
+</head>
 
 <body>
-    <div id="game-container">
-        <canvas id="game-canvas" width="800" height="400"></canvas>
+    <div id="ds-container">
+        <!-- 1. Top Screen: Game Display -->
+        <div id="screen-area">
+            <div id="game-container">
+                <canvas id="game-canvas" width="800" height="400"></canvas>
 
-        <!-- UI Overlay -->
-        <div id="ui-layer">
-            <div id="score-board">
-                점수: <span id="score-value">0</span>
-                <br>
-                거리: <span id="distance-value">0</span>m
-            </div>
-            <div id="game-version">v1.4.0</div>
+                <!-- UI Overlay -->
+                <div id="ui-layer">
+                    <div id="score-board">
+                        점수: <span id="score-value">0</span>
+                        <br>
+                        거리: <span id="distance-value">0</span>m
+                    </div>
+                    <div id="game-version">v1.5.0</div>
 
-            <button id="pause-btn">⏸️</button>
-            <button id="mute-btn">🔊</button>
-            <button id="feedback-btn">✉️</button>
-        </div>
+                    <!-- Top Right Buttons -->
+                    <button id="pause-btn">⏸️</button>
+                    <button id="mute-btn">🔊</button>
+                    <button id="feedback-btn">✉️</button>
 
-        <!-- Start Screen -->
-        <div id="start-screen" class="ui-screen">
-            <h1>Cat Run</h1>
-            <p>장애물을 넘고 아이템을 획득하세요!</p>
-            <div class="button-group">
-                <button id="start-btn">게임 시작</button>
-                <button id="show-leaderboard-start-btn" class="secondary-btn">🏆 ranking</button>
-            </div>
-            <p class="instructions">
-                점프는 길게 누르면 길게 뛰고 짧게 누르면 짧게 뜁니다.
-            </p>
-        </div>
+                    <!-- 상위 % 표시 -->
+                    <div id="percentile-container" class="percentile-container hidden">
+                        <p class="percentile-text">상위 <span id="percentile-value">--</span>%</p>
+                        <div class="percentile-bar-box">
+                            <div class="percentile-bar-bg"></div>
+                            <div id="percentile-marker" class="percentile-marker">▼</div>
+                        </div>
+                    </div>
+                </div>
 
-        <!-- Game Over Screen -->
-        <div id="game-over-screen" class="hidden ui-screen">
-            <h1>게임 오버</h1>
-            <p>점수: <span id="final-score">0</span></p>
+                <!-- Start Screen -->
+                <div id="start-screen" class="ui-screen">
+                    <h1>Cat Run</h1>
+                    <p>장애물을 넘고 아이템을 획득하세요!</p>
+                    <div class="button-group">
+                        <button id="start-btn" class="pixel-btn">GAME START</button>
+                        <button id="show-leaderboard-start-btn" class="pixel-btn secondary-btn">RANKING</button>
+                        <button id="group-btn" class="pixel-btn group-btn">그룹 플레이</button>
+                    </div>
+                </div>
 
-            <!-- 상위 % 표시 -->
-            <div id="percentile-container" class="percentile-container hidden">
-                <p class="percentile-text">상위 <span id="percentile-value">--</span>%</p>
-                <div class="percentile-bar-box">
-                    <div class="percentile-bar-bg"></div>
-                    <div id="percentile-marker" class="percentile-marker">▼</div>
+                <!-- Game Over Screen -->
+                <div id="game-over-screen" class="hidden ui-screen">
+                    <h1>게임 오버</h1>
+                    <p>점수: <span id="final-score">0</span></p>
+
+                    <div class="button-container">
+                        <button id="restart-btn">다시 하기</button>
+                        <button id="share-btn" class="secondary-btn" style="background-color: #9b59b6;">📤 도전장</button>
+                        <button id="show-leaderboard-btn" class="secondary-btn">🏆 ranking</button>
+                    </div>
+                </div>
+
+                <!-- Pause Overlay -->
+                <div id="pause-overlay" class="hidden ui-screen">
+                    <h1>일시 정지</h1>
+                    <button id="resume-btn">계속 하기</button>
+                    <p>'P'를 눌러 계속하기</p>
+                </div>
+
+                <!-- Leaderboard Screen -->
+                <div id="leaderboard-screen" class="hidden ui-screen">
+                    <h1>🏆 명예의 전당 🏆</h1>
+                    <div id="leaderboard-filter" style="margin-bottom: 10px;">
+                        <button id="filter-global-btn" class="filter-btn active">전체</button>
+                        <button id="filter-group-btn" class="filter-btn">그룹</button>
+                    </div>
+                    <div class="leaderboard-container">
+                        <table id="leaderboard-table">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Name</th>
+                                    <th>Score</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboard-body">
+                                <tr>
+                                    <td colspan="4">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <button id="leaderboard-close-btn">닫기</button>
+                </div>
+
+                <!-- Group Modal -->
+                <div id="group-modal" class="hidden ui-screen">
+                    <div class="modal-content">
+                        <h2>👥 그룹 플레이</h2>
+                        <div id="group-status-area">
+                            <p>현재 그룹: <span id="current-group-id" style="font-weight: bold; color: #e67e22;">없음</span>
+                            </p>
+                            <button id="leave-group-btn" class="hidden"
+                                style="background-color: #c0392b; margin-bottom: 15px;">그룹 나가기</button>
+                        </div>
+
+                        <div id="group-action-area">
+                            <div class="action-box"
+                                style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
+                                <p>새로운 그룹을 만듭니다</p>
+                                <button id="create-group-btn" style="background-color: #27ae60;">방 만들기</button>
+                            </div>
+                            <div class="action-box">
+                                <p>친구의 그룹에 참여합니다</p>
+                                <input type="text" id="group-code-input" placeholder="그룹 코드 입력 (6자리)" maxlength="6"
+                                    style="text-transform: uppercase;">
+                                <button id="join-group-btn" style="background-color: #3498db;">입장하기</button>
+                            </div>
+                        </div>
+                        <button id="close-group-modal-btn" class="secondary-btn" style="margin-top: 20px;">닫기</button>
+                    </div>
+                </div>
+
+                <!-- Name Input Modal -->
+                <div id="name-input-modal" class="hidden ui-screen">
+                    <div class="modal-content">
+                        <p>🎉 신기록 달성! 🎉</p>
+                        <p>등록할 이름을 입력하세요🤩</p>
+                        <input type="text" id="player-name-input" placeholder="이름 (최대 10자)" maxlength="10">
+                        <button id="submit-score-btn">등록</button>
+                    </div>
+                </div>
+
+                <!-- Feedback Modal -->
+                <div id="feedback-modal" class="hidden ui-screen">
+                    <div class="modal-content">
+                        <h2>개발자에게 메시지 보내기</h2>
+                        <p>버그 제보, 건의 사항 등 자유롭게 남겨주세요!</p>
+                        <textarea id="feedback-input" placeholder="내용을 입력하세요..." rows="5" maxlength="500"></textarea>
+                        <div class="button-group">
+                            <button id="send-feedback-btn">보내기</button>
+                            <button id="close-feedback-btn" class="secondary-btn">닫기</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Patch Notes Modal -->
+                <div id="patch-notes-modal" class="hidden ui-screen">
+                    <div class="modal-content patch-notes-content">
+                        <h2>📢 패치 노트 (v1.5.0)</h2>
+                        <div class="patch-list">
+                            <h3>✨ 새로운 기능</h3>
+                            <ul>
+                                <li><strong>👥 그룹 플레이:</strong> 친구들과 그룹을 만들어 경쟁하세요!</li>
+                                <li><strong>📤 도전장 공유:</strong> 내 점수를 친구에게 자랑해보세요.</li>
+                                <li><strong>📱 UI 개편:</strong> 닌텐도 DS 스타일의 새로운 레이아웃!</li>
+                            </ul>
+                            <h3>🛠️ 개선 사항</h3>
+                            <ul>
+                                <li><strong>🛡️ 쉴드 아이템:</strong> 최대 3개 중첩! 장애물을 막아줍니다.</li>
+                                <li><strong>✨ 일시 무적:</strong> 방어 후 잠시 동안 무적 상태가 됩니다.</li>
+                            </ul>
+                        </div>
+                        <div class="patch-footer">
+                            <label>
+                                <input type="checkbox" id="dont-show-again-checkbox">
+                                다시 보지 않기
+                            </label>
+                            <button id="close-patch-notes-btn">닫기</button>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <div class="button-container">
-                <button id="restart-btn">다시 하기</button>
-                <button id="show-leaderboard-btn" class="secondary-btn">🏆 ranking</button>
+        <!-- 2. Middle Screen: Controls -->
+        <div id="controls-area">
+            <div class="control-group left">
+                <button id="slide-btn" class="game-btn slide">
+                    <span class="btn-label">SLIDE</span>
+                    <span class="btn-key">↓</span>
+                </button>
+            </div>
+            <div class="control-group right">
+                <button id="jump-btn" class="game-btn jump">
+                    <span class="btn-label">JUMP</span>
+                    <span class="btn-key">↑</span>
+                </button>
             </div>
         </div>
 
-        <!-- Pause Overlay -->
-        <div id="pause-overlay" class="hidden ui-screen">
-            <h1>일시 정지</h1>
-            <button id="resume-btn">계속 하기</button>
-            <p>'P'를 눌러 계속하기</p>
-        </div>
-
-        <!-- Leaderboard Screen -->
-        <div id="leaderboard-screen" class="hidden ui-screen">
-            <h1>🏆 명예의 전당 🏆</h1>
-            <div class="leaderboard-container">
-                <table id="leaderboard-table">
-                    <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Name</th>
-                            <th>Score</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leaderboard-body">
-                        <!-- 자바스크립트로 데이터 로드됨 -->
-                        <tr>
-                            <td colspan="4">Loading...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <button id="leaderboard-close-btn">닫기</button>
-        </div>
-
-        <!-- Name Input Modal -->
-        <div id="name-input-modal" class="hidden ui-screen">
-            <div class="modal-content">
-                <p>🎉 신기록 달성! 🎉</p>
-                <p>등록할 이름을 입력하세요🤩</p>
-                <input type="text" id="player-name-input" placeholder="이름 (최대 10자)" maxlength="10">
-                <button id="submit-score-btn">등록</button>
+        <!-- 3. Bottom Screen: Ads -->
+        <div id="ad-area">
+            <div class="ad-placeholder">
+                <span>ADVERTISEMENT AREA</span>
             </div>
         </div>
+    </div>
 
-        <!-- Feedback Modal -->
-        <div id="feedback-modal" class="hidden ui-screen">
-            <div class="modal-content">
-                <h2>개발자에게 메시지 보내기</h2>
-                <p>버그 제보, 건의 사항 등 자유롭게 남겨주세요!</p>
-                <textarea id="feedback-input" placeholder="내용을 입력하세요..." rows="5" maxlength="500"></textarea>
-                <div class="button-group">
-                    <button id="send-feedback-btn">보내기</button>
-                    <button id="close-feedback-btn" class="secondary-btn">닫기</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Patch Notes Modal -->
-        <div id="patch-notes-modal" class="hidden ui-screen">
-            <div class="modal-content patch-notes-content">
-                <h2>📢 패치 노트 (v1.4.0)</h2>
-                <div class="patch-list">
-                    <h3>🎈 개발자 노트</h3>
-                    <ul>
-                        <li>드디어 슬라이드 모션을 고쳤습니다! 😭</li>
-                        <li>쉴드 아이템으로 더 오래 살아남아보세요!</li>
-                        <li>재밌게 즐겨주셔서 감사합니다.</li>
-                    </ul>
-                    <h3>✨ 새로운 기능</h3>
-                    <ul>
-                        <li><strong>✉️ 메시지 보내기:</strong> 개발자에게 메시지를 보낼 수 있습니다.</li>
-                        <li><strong>🛡️ 쉴드 아이템:</strong> 최대 3개 중첩! 장애물을 막아줍니다.</li>
-                        <li><strong>✨ 일시 무적:</strong> 방어 후 잠시 동안 무적 상태가 됩니다.</li>
-                        <li><strong>⬇️ 급강하:</strong> 공중에서 아래 키로 빠르게 착지 가능!</li>
-                    </ul>
-                    <h3>🛠️ 개선 사항</h3>
-                    <ul>
-                        <li><strong>⚖️ 밸런스 조정:</strong> 고속 구간 난이도 최적화 & 아이템 확률 조정.</li>
-                        <li><strong>💬 UI 효과:</strong> 아이템 획득/방어 시 텍스트 효과 추가.</li>
-                    </ul>
-                </div>
-                <div class="patch-footer">
-                    <label>
-                        <input type="checkbox" id="dont-show-again-checkbox">
-                        다시 보지 않기
-                    </label>
-                    <button id="close-patch-notes-btn">닫기</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Mobile Controls -->
-        <div id="mobile-controls" class="mobile-controls">
-            <button id="jump-btn" class="mobile-btn">
-                <span class="btn-icon">↑</span>
-            </button>
-            <button id="slide-btn" class="mobile-btn">
-                <span class="btn-icon">↓</span>
-            </button>
-        </div>
-
-        <!-- Rotate Warning -->
-        <div id="rotate-warning" class="rotate-warning hidden">
-            <div class="rotate-icon">📱↻</div>
-            <p>화면을 회전해주세요</p>
-        </div>
-
-        <script type="module" src="src/main.js"></script>
+    <script type="module" src="src/main.js"></script>
 </body>
 
 </html>

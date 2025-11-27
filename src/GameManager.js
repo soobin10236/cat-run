@@ -19,8 +19,12 @@ export class GameManager {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
-        this.width = canvas.width;
-        this.height = canvas.height;
+
+        // 초기 리사이징을 가장 먼저 수행 (엔티티 생성 전 크기 확정)
+        this.resize();
+
+        // this.width/height는 resize()에서 설정됨
+
         this.lastTime = 0; // 마지막 프레임 시간
         this.score = 0; // 현재 점수
         this.isGameOver = false; // 게임 오버 상태
@@ -40,7 +44,6 @@ export class GameManager {
         this.player = new Player(this); // 플레이어
         this.firebaseManager = new FirebaseManager(); // Firebase 매니저
 
-        // 실시간 버전 체크
         // 실시간 버전 체크
         this.isUpdateAlertShown = false;
         this.firebaseManager.listenForVersionChange((serverVersion) => {
@@ -67,6 +70,7 @@ export class GameManager {
         this.pauseOverlay = document.getElementById('pause-overlay');
         this.finalScoreElement = document.getElementById('final-score');
         this.restartBtn = document.getElementById('restart-btn');
+        this.shareBtn = document.getElementById('share-btn'); // 공유 버튼
         this.pauseBtn = document.getElementById('pause-btn');
         this.resumeBtn = document.getElementById('resume-btn'); // 재개 버튼
         this.muteBtn = document.getElementById('mute-btn');
@@ -94,6 +98,18 @@ export class GameManager {
         this.sendFeedbackBtn = document.getElementById('send-feedback-btn');
         this.closeFeedbackBtn = document.getElementById('close-feedback-btn');
 
+        // 그룹 관련 UI
+        this.groupBtn = document.getElementById('group-btn');
+        this.groupModal = document.getElementById('group-modal');
+        this.closeGroupModalBtn = document.getElementById('close-group-modal-btn');
+        this.createGroupBtn = document.getElementById('create-group-btn');
+        this.joinGroupBtn = document.getElementById('join-group-btn');
+        this.groupCodeInput = document.getElementById('group-code-input');
+        this.leaveGroupBtn = document.getElementById('leave-group-btn');
+        this.currentGroupIdSpan = document.getElementById('current-group-id');
+        this.filterGlobalBtn = document.getElementById('filter-global-btn');
+        this.filterGroupBtn = document.getElementById('filter-group-btn');
+
         this.bindEvents();
 
         // 게임 시작 전에도 화면을 그리기 위해 루프 시작 (update는 스킵됨)
@@ -103,6 +119,8 @@ export class GameManager {
         this.playTime = 0; // 플레이 시간 (ms)
         this.sessionId = null; // 현재 게임 세션 ID
         this.userId = localStorage.getItem('userId');
+        this.groupId = localStorage.getItem('groupId'); // 그룹 ID 로드
+        this.rankingFilter = 'global'; // 'global' or 'group'
 
         // User ID가 없으면 생성
         if (!this.userId) {
@@ -110,64 +128,64 @@ export class GameManager {
             localStorage.setItem('userId', this.userId);
         }
 
+        // 초기 리사이징 및 이벤트 리스너 등록
+        // this.resize(); // 위에서 이미 호출됨
+        window.addEventListener('resize', () => this.resize());
+
         this.gameLoop(0);
     }
 
     /**
+     * 캔버스 크기를 화면 영역에 맞게 조정
+     */
+    resize() {
+        const screenArea = document.getElementById('screen-area');
+        if (screenArea) {
+            this.canvas.width = screenArea.clientWidth;
+            this.canvas.height = screenArea.clientHeight;
+            this.width = this.canvas.width;
+            this.height = this.canvas.height;
+        }
+    }
+
+    /**
      * 게임 상태 업데이트
-     * @param {number} deltaTime - 이전 프레임과의 시간 차이
      */
     update(deltaTime) {
-        // deltaTime 캡핑: 비정상적으로 큰 값 제한 (탭 전환 시 방지)
         deltaTime = Math.min(deltaTime, 1000);
 
-        // 게임이 시작되지 않았거나 게임 오버 상태이거나 일시정지 상태면 업데이트 중지
         if (!this.isGameStarted || this.isGameOver || this.isPaused) return;
 
         this.playTime += deltaTime;
 
-        // 엔티티 업데이트
         this.background.update(deltaTime);
         this.player.update(this.input, deltaTime);
 
-        // 플로팅 메시지 업데이트
         this.floatingMessages.forEach(msg => msg.update(deltaTime));
         this.floatingMessages = this.floatingMessages.filter(msg => !msg.markedForDeletion);
 
-        // 총알 업데이트 및 충돌 처리
         this.projectiles.forEach(projectile => {
             projectile.update(deltaTime);
-
-            // 플레이어와 총알 충돌 체크 (거리 기반)
             const dx = (this.player.x + this.player.width / 2) - projectile.x;
             const dy = (this.player.y + this.player.height / 2) - projectile.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
 
-            // 플레이어 반지름(약 30) + 총알 반지름(6)
             if (distance < 30 + projectile.radius) {
                 this.gameOver();
             }
         });
         this.projectiles = this.projectiles.filter(p => !p.markedForDeletion);
 
-        // 장애물 처리
         if (this.obstacleTimer > this.obstacleInterval) {
             this.obstacles.push(new Obstacle(this));
             this.obstacleTimer = 0;
 
-            // 다음 장애물 생성 간격 계산
             const { BASE_INTERVAL, MIN_INTERVAL, SPEED_COEFFICIENT, SCORE_COEFFICIENT, RANDOM_DELAY } = DIFFICULTY_SETTINGS.OBSTACLE;
-
             const speedReduction = this.gameSpeed * SPEED_COEFFICIENT;
             const scoreReduction = this.score * SCORE_COEFFICIENT;
-
             const baseInterval = BASE_INTERVAL - speedReduction - scoreReduction;
-
-            // 속도가 빨라질수록 최소 간격도 줄여서 난이도 유지 (거리 = 속도 * 시간)
-            // 속도가 2배 되면 최소 시간 간격은 절반이 되어야 거리가 유지됨 (제곱근 사용)
             const speedRatio = this.gameSpeed / DIFFICULTY_SETTINGS.GAME_SPEED.INITIAL;
             const dynamicMinInterval = MIN_INTERVAL / Math.sqrt(speedRatio);
-
             const safeInterval = Math.max(baseInterval, dynamicMinInterval);
 
             this.obstacleInterval = safeInterval + Math.random() * RANDOM_DELAY;
@@ -178,19 +196,14 @@ export class GameManager {
         this.obstacles.forEach(obstacle => {
             obstacle.update(deltaTime);
             if (this.checkCollision(this.player, obstacle)) {
-                // 쉴드가 있으면 방어 시도
                 if (this.player.hitShield()) {
-                    this.audioManager.playItemSound(); // 방어 효과음
-
-                    // 방어 메시지
+                    this.audioManager.playItemSound();
                     this.floatingMessages.push(
                         new FloatingMessage("BLOCK!", this.player.x, this.player.y, this.player.x, this.player.y - 50, '#00FFFF')
                     );
-
-                    // 장애물 제거
                     obstacle.markedForDeletion = true;
                 } else if (this.player.invincibleTimer > 0) {
-                    // 일시 무적 상태면 그냥 통과 (데미지 없음)
+                    // 무적
                 } else {
                     this.gameOver();
                 }
@@ -198,9 +211,7 @@ export class GameManager {
         });
         this.obstacles = this.obstacles.filter(obstacle => !obstacle.markedForDeletion);
 
-        // 아이템 처리
         if (this.itemTimer > this.itemInterval) {
-            // 생성 주기 도달
             if (Math.random() < ITEM_CONFIG.SPAWN_CHANCE) {
                 const lastObstacle = this.obstacles.length > 0 ? this.obstacles[this.obstacles.length - 1] : null;
                 const lastItem = this.items.length > 0 ? this.items[this.items.length - 1] : null;
@@ -208,22 +219,11 @@ export class GameManager {
                 const safeDistance = this.width * ITEM_CONFIG.SAFE_DISTANCE_RATIO;
                 let canSpawn = true;
 
-                // 마지막 장애물과의 거리 체크
-                if (lastObstacle && lastObstacle.x > this.width - safeDistance) {
-                    canSpawn = false;
-                }
-                // 마지막 아이템과의 거리 체크 (연속 뭉침 방지)
-                if (lastItem && lastItem.x > this.width - safeDistance) {
-                    canSpawn = false;
-                }
-
-                // 장애물 생성 예정 시간과 너무 가까우면 생성 금지 (겹침 방지)
-                if (this.obstacleInterval - this.obstacleTimer < 300) { // 0.3초 이내 장애물 생성 예정이면 스킵
-                    canSpawn = false;
-                }
+                if (lastObstacle && lastObstacle.x > this.width - safeDistance) canSpawn = false;
+                if (lastItem && lastItem.x > this.width - safeDistance) canSpawn = false;
+                if (this.obstacleInterval - this.obstacleTimer < 300) canSpawn = false;
 
                 if (canSpawn) {
-                    // 확률에 따라 아이템 타입 결정
                     const rand = Math.random();
                     let type = ITEM_CONFIG.TYPES.SCORE;
                     if (rand > ITEM_CONFIG.PROBABILITIES.SCORE) {
@@ -232,8 +232,6 @@ export class GameManager {
                     this.items.push(new Item(this, type));
                 }
             }
-
-            // 다음 생성 시간 랜덤 설정
             this.itemTimer = 0;
             this.itemInterval = Math.random() * (ITEM_CONFIG.SPAWN_INTERVAL_MAX - ITEM_CONFIG.SPAWN_INTERVAL_MIN) + ITEM_CONFIG.SPAWN_INTERVAL_MIN;
         } else {
@@ -252,7 +250,7 @@ export class GameManager {
                         new FloatingMessage("+100", item.x, item.y, item.x, item.y - 50, '#FFFF00')
                     );
                 } else if (item.type === ITEM_CONFIG.TYPES.SHIELD) {
-                    this.player.addShield(); // 쉴드 추가
+                    this.player.addShield();
                     this.floatingMessages.push(
                         new FloatingMessage("SHIELD!", item.x, item.y, item.x, item.y - 50, '#00FFFF')
                     );
@@ -261,37 +259,25 @@ export class GameManager {
         });
         this.items = this.items.filter(item => !item.markedForDeletion);
 
-        // 점수 증가
         this.score += (this.gameSpeed * deltaTime) * 0.01;
-        // 거리 증가 (게임 속도 * 시간)
         this.distance += (this.gameSpeed * deltaTime) * 0.001;
 
         this.updateScoreUI();
 
-        // 게임 속도 계산 (비선형 Ease-out 방식)
-        // 초반에 빠르게 증가하고 후반에 완만하게 증가
         const timeElapsedSeconds = this.playTime / 1000;
         const progress = Math.min(timeElapsedSeconds / DIFFICULTY_SETTINGS.GAME_SPEED.TARGET_TIME_SECONDS, 1.0);
-
-        // Ease-out Quad 공식: t * (2 - t)
         const easeOutProgress = progress * (2 - progress);
-
         const speedDiff = DIFFICULTY_SETTINGS.GAME_SPEED.MAX - DIFFICULTY_SETTINGS.GAME_SPEED.INITIAL;
         this.gameSpeed = DIFFICULTY_SETTINGS.GAME_SPEED.INITIAL + (speedDiff * easeOutProgress);
     }
 
-    /**
-     * 화면 그리기
-     */
     draw() {
         this.ctx.clearRect(0, 0, this.width, this.height);
-
         this.background.draw(this.ctx);
         this.player.draw(this.ctx);
         this.obstacles.forEach(obstacle => obstacle.draw(this.ctx));
         this.items.forEach(item => item.draw(this.ctx));
         this.projectiles.forEach(projectile => projectile.draw(this.ctx));
-
         this.floatingMessages.forEach(msg => msg.draw(this.ctx));
 
         if (DEBUG_MODE) {
@@ -304,19 +290,15 @@ export class GameManager {
         this.ctx.font = 'bold 16px monospace';
         this.ctx.textAlign = 'left';
         this.ctx.textBaseline = 'top';
-
         const x = 10;
-        let y = 60; // 점수 표시 아래쪽
-
+        let y = 60;
         const info = [
             `Time: ${(this.playTime / 1000).toFixed(1)}s`,
             `Speed: ${this.gameSpeed.toFixed(2)} / ${DIFFICULTY_SETTINGS.GAME_SPEED.MAX}`,
             `Interval: ${Math.floor(this.obstacleInterval)}ms`,
             `Score: ${Math.floor(this.score)}`
         ];
-
         info.forEach(text => {
-            // 가독성을 위해 흰색 테두리 추가
             this.ctx.strokeStyle = 'white';
             this.ctx.lineWidth = 3;
             this.ctx.strokeText(text, x, y);
@@ -325,13 +307,9 @@ export class GameManager {
         });
     }
 
-    /**
-     * 충돌 감지 (AABB 방식)
-     */
     checkCollision(a, b) {
         let scaleX = 0.6;
         let scaleY = 0.6;
-
         if (b instanceof Item) {
             scaleX = 0.8;
             scaleY = 0.8;
@@ -342,24 +320,15 @@ export class GameManager {
                 scaleX = 0.7;
             }
         }
-
         const aWidth = a.width * 0.5;
         const aHeight = a.height * 0.5;
-
         const bWidth = b.width * scaleX;
         const bHeight = b.height * scaleY;
-
         const aX = a.x + (a.width - aWidth) / 2;
         const aY = a.y + (a.height - aHeight) / 2;
         const bX = b.x + (b.width - bWidth) / 2;
         const bY = b.y + (b.height - bHeight) / 2;
-
-        return (
-            aX < bX + bWidth &&
-            aX + aWidth > bX &&
-            aY < bY + bHeight &&
-            aY + aHeight > bY
-        );
+        return (aX < bX + bWidth && aX + aWidth > bX && aY < bY + bHeight && aY + aHeight > bY);
     }
 
     restart() {
@@ -378,16 +347,14 @@ export class GameManager {
         this.gameOverScreen.classList.add('hidden');
         this.leaderboardScreen.classList.add('hidden');
         this.nameInputModal.classList.add('hidden');
-        if (this.percentileContainer) this.percentileContainer.classList.add('hidden'); // 재시작 시 숨김
+        if (this.percentileContainer) this.percentileContainer.classList.add('hidden');
         this.updateScoreUI();
 
-        this.background = new Background(this);
+        this.background.reset();
         this.player = new Player(this);
 
         this.audioManager.playBgm();
         this.lastTime = performance.now();
-
-        // 재시작 시 새로운 세션 시작
         this.startSession();
     }
 
@@ -395,37 +362,37 @@ export class GameManager {
         this.isGameStarted = true;
         this.lastTime = performance.now();
         this.audioManager.playBgm();
-
-        // 게임 시작 시 세션 생성
         await this.startSession();
     }
 
     async startSession() {
-        this.sessionId = await this.firebaseManager.startSession(this.userId, GAME_VERSION);
-        console.log("Game Session Started:", this.sessionId);
+        this.sessionId = await this.firebaseManager.startSession(this.userId, GAME_VERSION, this.groupId);
+        console.log("Game Session Started:", this.sessionId, "Group:", this.groupId);
     }
 
     bindEvents() {
         this.restartBtn.addEventListener('click', () => this.restart());
         this.pauseBtn.addEventListener('click', () => this.togglePause());
-        this.resumeBtn.addEventListener('click', () => this.togglePause()); // Resume 버튼 연결
+        this.resumeBtn.addEventListener('click', () => this.togglePause());
         this.muteBtn.addEventListener('click', () => this.toggleMute());
 
         this.showLeaderboardBtn.addEventListener('click', () => this.showLeaderboard());
         this.leaderboardCloseBtn.addEventListener('click', () => {
             this.leaderboardScreen.classList.add('hidden');
-            // 게임 오버 상태라면 게임 오버 화면을 다시 보여줌
             if (this.isGameOver && !this.isGameStarted) {
-                // 시작 화면에서 랭킹 본 경우 (처리 필요)
+                // 시작 화면에서 랭킹 본 경우
             } else if (this.isGameOver) {
                 this.gameOverScreen.classList.remove('hidden');
             }
         });
         this.submitScoreBtn.addEventListener('click', () => this.submitScore());
 
-        // 피드백 이벤트
+        if (this.shareBtn) {
+            this.shareBtn.addEventListener('click', () => this.shareScore());
+        }
+
         this.feedbackBtn.addEventListener('click', () => {
-            this.togglePause(); // 게임 일시정지
+            this.togglePause();
             this.feedbackModal.classList.remove('hidden');
             this.feedbackInput.value = '';
             this.feedbackInput.focus();
@@ -433,7 +400,6 @@ export class GameManager {
 
         this.closeFeedbackBtn.addEventListener('click', () => {
             this.feedbackModal.classList.add('hidden');
-            // 일시정지 해제는 사용자가 직접 하도록 둠 (실수로 닫았을 때 바로 게임 시작되면 당황하니까)
         });
 
         this.sendFeedbackBtn.addEventListener('click', async () => {
@@ -442,22 +408,64 @@ export class GameManager {
                 alert("내용을 입력해주세요!");
                 return;
             }
-
             this.sendFeedbackBtn.disabled = true;
             this.sendFeedbackBtn.innerText = "전송 중...";
-
             const success = await this.firebaseManager.sendFeedback(message, this.userId);
-
             if (success) {
                 alert("소중한 의견 감사합니다! 🙇‍♂️");
                 this.feedbackModal.classList.add('hidden');
             } else {
                 alert("전송에 실패했습니다. 잠시 후 다시 시도해주세요.");
             }
-
             this.sendFeedbackBtn.disabled = false;
             this.sendFeedbackBtn.innerText = "보내기";
         });
+
+        // 그룹 관련 이벤트
+        if (this.groupBtn) {
+            this.groupBtn.addEventListener('click', () => {
+                this.groupModal.classList.remove('hidden');
+                this.updateGroupUI();
+            });
+        }
+
+        if (this.closeGroupModalBtn) {
+            this.closeGroupModalBtn.addEventListener('click', () => {
+                this.groupModal.classList.add('hidden');
+            });
+        }
+
+        if (this.createGroupBtn) {
+            this.createGroupBtn.addEventListener('click', () => this.createGroup());
+        }
+
+        if (this.joinGroupBtn) {
+            this.joinGroupBtn.addEventListener('click', () => this.joinGroup());
+        }
+
+        if (this.leaveGroupBtn) {
+            this.leaveGroupBtn.addEventListener('click', () => this.leaveGroup());
+        }
+
+        if (this.filterGlobalBtn && this.filterGroupBtn) {
+            this.filterGlobalBtn.addEventListener('click', () => {
+                this.rankingFilter = 'global';
+                this.filterGlobalBtn.classList.add('active');
+                this.filterGroupBtn.classList.remove('active');
+                this.showLeaderboard();
+            });
+
+            this.filterGroupBtn.addEventListener('click', () => {
+                if (!this.groupId) {
+                    alert("그룹에 먼저 가입해주세요!");
+                    return;
+                }
+                this.rankingFilter = 'group';
+                this.filterGroupBtn.classList.add('active');
+                this.filterGlobalBtn.classList.remove('active');
+                this.showLeaderboard();
+            });
+        }
 
         window.addEventListener('keydown', (e) => {
             if (this.isGameOver && e.key.toLowerCase() === 'r') {
@@ -508,39 +516,29 @@ export class GameManager {
         this.audioManager.stopBgm();
         this.audioManager.playGameOverSound();
 
-        // 세션 종료 및 기록 업데이트
         if (this.sessionId) {
             await this.firebaseManager.endSession(this.sessionId, finalScore, finalDistance);
         }
 
-        // 상위 % 계산 및 표시
         if (this.percentileContainer && finalScore > 0) {
             this.percentileContainer.classList.remove('hidden');
             this.percentileValue.innerText = "--";
             this.percentileMarker.style.left = "0%";
-
-            // 비동기로 계산
             this.firebaseManager.calculatePercentile(finalScore).then(percentile => {
                 if (percentile) {
                     this.percentileValue.innerText = percentile;
-                    // 상위 1% -> left: 0%, 상위 99% -> left: 100%
-                    // percentile은 0.1 ~ 100 사이 값
-                    // UI상 왼쪽이 상위권(0%)이므로, left 값은 (percentile)% 가 적절함
-                    // 예: 상위 10% -> 왼쪽에서 10% 지점
                     this.percentileMarker.style.left = `${percentile}%`;
                 }
             });
         }
 
-        const isTopTen = await this.firebaseManager.isTopTen(finalScore);
+        const isTopTen = await this.firebaseManager.isTopTen(finalScore, this.groupId);
         if (isTopTen) {
             setTimeout(() => {
                 this.gameOverScreen.classList.add('hidden');
                 this.nameInputModal.classList.remove('hidden');
                 this.playerNameInput.focus();
-            }, 1500); // 퍼센티지 볼 시간 조금 더 줌
-        } else {
-            // 랭킹권이 아니면 그냥 둠 (이미 endSession에서 기록됨)
+            }, 1500);
         }
     }
 
@@ -558,7 +556,6 @@ export class GameManager {
         this.submitScoreBtn.disabled = true;
         this.submitScoreBtn.innerText = "저장 중...";
 
-        // 이미 생성된 세션에 이름만 업데이트
         const success = await this.firebaseManager.updatePlayerName(this.sessionId, name);
 
         if (success) {
@@ -573,16 +570,102 @@ export class GameManager {
         this.playerNameInput.value = "";
     }
 
+    async shareScore() {
+        const score = Math.floor(this.score);
+        const title = "Cat Run 챌린지! 🐱";
+        const text = `내 점수는 ${score}점! 넌 깰 수 있냥? 🐾\n지금 바로 도전해보세요!`;
+        const url = window.location.href;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: title,
+                    text: text,
+                    url: url
+                });
+            } catch (error) {
+                console.log('공유 실패:', error);
+            }
+        } else {
+            try {
+                await navigator.clipboard.writeText(`${text}\n${url}`);
+                alert("링크가 클립보드에 복사되었습니다! 친구에게 공유해보세요.");
+            } catch (err) {
+                alert("공유하기를 지원하지 않는 브라우저입니다.");
+            }
+        }
+    }
+
+    async createGroup() {
+        if (confirm("새로운 그룹을 만드시겠습니까?")) {
+            const newGroupId = await this.firebaseManager.createGroup(this.userId);
+            if (newGroupId) {
+                this.groupId = newGroupId;
+                localStorage.setItem('groupId', this.groupId);
+                alert(`그룹이 생성되었습니다! 코드: ${newGroupId}`);
+                this.updateGroupUI();
+            } else {
+                alert("그룹 생성 실패. 다시 시도해주세요.");
+            }
+        }
+    }
+
+    async joinGroup() {
+        const code = this.groupCodeInput.value.trim().toUpperCase();
+        if (code.length !== 6) {
+            alert("6자리 코드를 입력해주세요.");
+            return;
+        }
+
+        const success = await this.firebaseManager.joinGroup(code, this.userId);
+        if (success) {
+            this.groupId = code;
+            localStorage.setItem('groupId', this.groupId);
+            alert("그룹에 입장했습니다!");
+            this.updateGroupUI();
+            this.groupCodeInput.value = '';
+        } else {
+            alert("그룹을 찾을 수 없거나 입장할 수 없습니다.");
+        }
+    }
+
+    leaveGroup() {
+        if (confirm("정말 그룹을 나가시겠습니까?")) {
+            this.groupId = null;
+            localStorage.removeItem('groupId');
+            this.updateGroupUI();
+            alert("그룹에서 나갔습니다.");
+        }
+    }
+
+    updateGroupUI() {
+        if (this.groupId) {
+            this.currentGroupIdSpan.innerText = this.groupId;
+            this.leaveGroupBtn.classList.remove('hidden');
+            this.createGroupBtn.disabled = true;
+            this.joinGroupBtn.disabled = true;
+            this.groupCodeInput.disabled = true;
+        } else {
+            this.currentGroupIdSpan.innerText = "없음";
+            this.leaveGroupBtn.classList.add('hidden');
+            this.createGroupBtn.disabled = false;
+            this.joinGroupBtn.disabled = false;
+            this.groupCodeInput.disabled = false;
+        }
+    }
+
     async showLeaderboard() {
         this.gameOverScreen.classList.add('hidden');
         this.leaderboardScreen.classList.remove('hidden');
         this.leaderboardBody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
 
-        const scores = await this.firebaseManager.getTopScores();
+        const targetGroupId = (this.rankingFilter === 'group') ? this.groupId : null;
+        const scores = await this.firebaseManager.getTopScores(targetGroupId);
 
         this.leaderboardBody.innerHTML = '';
         if (scores.length === 0) {
-            this.leaderboardBody.innerHTML = '<tr><td colspan="4">아직 기록이 없습니다. 첫 번째 주인공이 되어보세요!</td></tr>';
+            const msg = targetGroupId ? "그룹 랭킹이 비어있습니다." : "아직 기록이 없습니다.";
+            this.leaderboardBody.innerHTML = `<tr><td colspan="4">${msg}</td></tr>`;
             return;
         }
 
